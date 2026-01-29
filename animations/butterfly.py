@@ -41,7 +41,7 @@ def get_butterfly_pixels(cx, cy, wing_angle, size=5):
     for dy in range(-3, 4):
         y = int(cy + dy)
         if 0 <= y < 16:
-            pixels.append((int(cx), y, *body_color))
+            pixels.append((int(cx), y, body_color[0], body_color[1], body_color[2]))
 
     # Wing spread based on angle (0.3 to 1.0)
     spread = 0.5 + 0.5 * math.sin(wing_angle)
@@ -60,7 +60,8 @@ def get_butterfly_pixels(cx, cy, wing_angle, size=5):
                 if 0 <= x < 16 and 0 <= y < 16:
                     # Color based on distance from body
                     color_idx = min(wx - 1, len(colors) - 1)
-                    pixels.append((x, y, *colors[color_idx]))
+                    c = colors[color_idx]
+                    pixels.append((x, y, c[0], c[1], c[2]))
 
     # Lower wings (smaller, rounder)
     lower_wing_width = int(3 * spread) + 1
@@ -76,7 +77,7 @@ def get_butterfly_pixels(cx, cy, wing_angle, size=5):
                     color_idx = min(wx - 1, len(colors) - 1)
                     # Slightly different colors for lower wings
                     c = colors[(color_idx + 2) % len(colors)]
-                    pixels.append((x, y, *c))
+                    pixels.append((x, y, c[0], c[1], c[2]))
 
     # Wing spots (decorative dots)
     spot_color = (255, 255, 255)  # White spots
@@ -85,12 +86,12 @@ def get_butterfly_pixels(cx, cy, wing_angle, size=5):
         spot_x = int(cx + side * int(2 * spread + 1))
         spot_y = int(cy - 1 - int(spread))
         if 0 <= spot_x < 16 and 0 <= spot_y < 16:
-            pixels.append((spot_x, spot_y, *spot_color))
+            pixels.append((spot_x, spot_y, spot_color[0], spot_color[1], spot_color[2]))
         # Lower wing spot
         spot_x = int(cx + side * int(1.5 * spread + 1))
         spot_y = int(cy + 2)
         if 0 <= spot_x < 16 and 0 <= spot_y < 16:
-            pixels.append((spot_x, spot_y, *spot_color))
+            pixels.append((spot_x, spot_y, spot_color[0], spot_color[1], spot_color[2]))
 
     # Antennae
     antenna_color = (60, 30, 15)
@@ -98,7 +99,7 @@ def get_butterfly_pixels(cx, cy, wing_angle, size=5):
         ax = int(cx + side)
         ay = int(cy - 4)
         if 0 <= ax < 16 and 0 <= ay < 16:
-            pixels.append((ax, ay, *antenna_color))
+            pixels.append((ax, ay, antenna_color[0], antenna_color[1], antenna_color[2]))
 
     return pixels
 
