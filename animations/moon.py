@@ -11,9 +11,20 @@ from lib import display, sound
 SOUND_FILE = "sounds/moon.wav"
 
 
-def get_moon_pixels(cx, cy, radius):
-    """Generate a full moon shape."""
+def get_moon_pixels(cx, cy, radius, with_craters=False):
+    """Generate a full moon shape with optional crater shading."""
     pixels = []
+    crater_pixels = []
+
+    # Pre-defined crater positions (relative to center, scaled by radius)
+    crater_offsets = [
+        (-0.3, -0.2, 0.15),  # (x_offset, y_offset, size)
+        (0.2, 0.3, 0.12),
+        (-0.1, 0.4, 0.1),
+        (0.35, -0.1, 0.08),
+        (-0.4, 0.1, 0.1),
+    ]
+
     for y in range(16):
         for x in range(16):
             dx = x - cx
@@ -21,8 +32,23 @@ def get_moon_pixels(cx, cy, radius):
             dist = math.sqrt(dx * dx + dy * dy)
 
             if dist <= radius:
-                pixels.append((x, y))
-    return pixels
+                # Check if pixel is in a crater
+                is_crater = False
+                if with_craters:
+                    for cox, coy, csize in crater_offsets:
+                        crater_cx = cx + cox * radius
+                        crater_cy = cy + coy * radius
+                        crater_dist = math.sqrt((x - crater_cx)**2 + (y - crater_cy)**2)
+                        if crater_dist <= csize * radius:
+                            is_crater = True
+                            break
+
+                if is_crater:
+                    crater_pixels.append((x, y))
+                else:
+                    pixels.append((x, y))
+
+    return pixels, crater_pixels
 
 
 def play(su, graphics, check_interrupt=None):
@@ -41,8 +67,8 @@ def play(su, graphics, check_interrupt=None):
     moon_brightness = random.randint(200, 255)
     num_stars = random.randint(8, 15)
 
-    # Full moon, slightly smaller
-    moon_radius = 6
+    # Full moon - smaller looks rounder on low-res display
+    moon_radius = 5
     # Moon rises from bottom-left (off screen) to center
     start_cx, start_cy = -3, 19
     end_cx, end_cy = 8, 8
@@ -69,6 +95,7 @@ def play(su, graphics, check_interrupt=None):
 
     # Colors
     moon_color = (moon_brightness, moon_brightness, int(moon_brightness * 0.9))
+    crater_color = (int(moon_brightness * 0.6), int(moon_brightness * 0.6), int(moon_brightness * 0.55))
     bg_color = (5, 5, 20)  # Dark blue night sky
 
     # Start sound
@@ -105,10 +132,13 @@ def play(su, graphics, check_interrupt=None):
         moon_cx = start_cx + (end_cx - start_cx) * progress
         moon_cy = start_cy + (end_cy - start_cy) * progress
 
-        # Draw moon
-        moon_pixels = get_moon_pixels(moon_cx, moon_cy, moon_radius)
+        # Draw moon with craters
+        moon_pixels, crater_pixels = get_moon_pixels(moon_cx, moon_cy, moon_radius, with_craters=True)
         graphics.set_pen(graphics.create_pen(*moon_color))
         for x, y in moon_pixels:
+            graphics.pixel(x, y)
+        graphics.set_pen(graphics.create_pen(*crater_color))
+        for x, y in crater_pixels:
             graphics.pixel(x, y)
 
         su.update(graphics)
@@ -118,8 +148,8 @@ def play(su, graphics, check_interrupt=None):
     hold_start = time.ticks_ms()
     hold_duration_ms = 5000
 
-    # Pre-calculate final moon pixels
-    final_moon_pixels = get_moon_pixels(end_cx, end_cy, moon_radius)
+    # Pre-calculate final moon pixels with craters
+    final_moon_pixels, final_crater_pixels = get_moon_pixels(end_cx, end_cy, moon_radius, with_craters=True)
 
     while time.ticks_diff(time.ticks_ms(), hold_start) < hold_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
@@ -138,9 +168,12 @@ def play(su, graphics, check_interrupt=None):
             graphics.set_pen(graphics.create_pen(brightness, brightness, brightness))
             graphics.pixel(star['x'], star['y'])
 
-        # Draw moon at center
+        # Draw moon at center with craters
         graphics.set_pen(graphics.create_pen(*moon_color))
         for x, y in final_moon_pixels:
+            graphics.pixel(x, y)
+        graphics.set_pen(graphics.create_pen(*crater_color))
+        for x, y in final_crater_pixels:
             graphics.pixel(x, y)
 
         su.update(graphics)

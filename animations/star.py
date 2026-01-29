@@ -83,17 +83,19 @@ def play(su, graphics, check_interrupt=None):
     Returns:
         None if completed normally, button name (str) if interrupted
     """
-    # Random variations per PRD
-    base_yellow = (255, 220, 0)
-    hue_shift = random.randint(-20, 20)
-    r = min(255, max(0, base_yellow[0] + hue_shift))
+    # Bright pure yellow with slight variation
+    base_yellow = (255, 255, 0)
+    hue_shift = random.randint(-10, 10)
+    r = min(255, max(0, base_yellow[0]))
     g = min(255, max(0, base_yellow[1] + hue_shift))
     b = min(255, max(0, base_yellow[2]))
 
-    # Rotation direction and speed variation
+    # Rotation direction and speed - more pronounced spin
     rotation_dir = random.choice([-1, 1])
-    rotation_speed = (0.8 + random.uniform(-0.15, 0.15)) * rotation_dir
-    bounce_speed = 1.0 + random.uniform(-0.15, 0.15)
+    rotation_speed = (1.5 + random.uniform(-0.2, 0.2)) * rotation_dir
+    # More pronounced bounce
+    bounce_speed = 1.5 + random.uniform(-0.2, 0.2)
+    bounce_amplitude = 3.5  # Increased from 2.5
 
     # Star size: 70% of display = radius of about 5-6 pixels
     star_size = 5.5
@@ -119,8 +121,8 @@ def play(su, graphics, check_interrupt=None):
         # Rotation
         rotation = t * rotation_speed * 2
 
-        # Bouncing motion (sinusoidal)
-        bounce_offset = math.sin(t * bounce_speed * 4) * 2.5
+        # Bouncing motion (sinusoidal) - more pronounced
+        bounce_offset = math.sin(t * bounce_speed * 4) * bounce_amplitude
         cy = 7.5 + bounce_offset
 
         # Save for final frame
