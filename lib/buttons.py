@@ -116,19 +116,14 @@ def get_pressed():
 
 def get_combo_pressed():
     """
-    Check if heart+star (A+B) combo is pressed.
-    Returns 'butterfly' if both pressed, None otherwise.
+    Check if volume up button is pressed for butterfly.
+    Returns 'butterfly' if pressed, None otherwise.
     """
-    heart_pressed = (
-        ('heart' in _buttons and _buttons['heart'].value() == 0) or
-        _check_onboard_button('heart')
-    )
-    star_pressed = (
-        ('star' in _buttons and _buttons['star'].value() == 0) or
-        _check_onboard_button('star')
-    )
+    if _stellar_unicorn is None:
+        return None
 
-    if heart_pressed and star_pressed:
+    from stellar import StellarUnicorn
+    if _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_VOLUME_UP):
         return 'butterfly'
     return None
 
