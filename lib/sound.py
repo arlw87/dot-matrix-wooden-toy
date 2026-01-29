@@ -74,9 +74,12 @@ def play(su, filename):
     """
     Play a WAV file through the Stellar Unicorn speaker.
     Non-blocking - audio plays in background.
+
+    Note: Stellar Unicorn expects 16-bit signed PCM at specific sample rate.
+    WAV files should be pre-converted to match hardware expectations.
     """
     audio_data, sample_rate = load_wav(filename)
-    su.play_sample(audio_data, sample_rate)
+    su.play_sample(audio_data)
 
 
 def stop(su):
