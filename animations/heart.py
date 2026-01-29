@@ -78,7 +78,7 @@ def play(su, graphics, check_interrupt=None):
         # Calculate beat phase (pulsing effect)
         t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
         # Single beat: quick expand, slow contract
-        beat_cycle = (t * beat_speed * 1.2) % 1.0
+        beat_cycle = (t * beat_speed * 1.0) % 1.0
 
         # Smaller at rest (0.85), expands to full size (1.15) on beat
         rest_scale = 0.85
