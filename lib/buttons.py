@@ -114,7 +114,7 @@ def get_pressed():
     return None
 
 
-def get_combo_pressed():
+def get_butterfly_pressed():
     """
     Check if sleep button is pressed for butterfly.
     Returns 'butterfly' if pressed, None otherwise.
@@ -123,7 +123,9 @@ def get_combo_pressed():
         return None
 
     from stellar import StellarUnicorn
-    if _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_SLEEP):
+    pressed = _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_SLEEP)
+    if pressed:
+        print("[BTN DEBUG] Sleep button pressed - returning butterfly")
         return 'butterfly'
     return None
 
