@@ -79,8 +79,7 @@ def create_interrupt_checker(su):
     def check_interrupt():
         # Also handle brightness buttons
         check_brightness_buttons(su)
-        # Check for butterfly button first, then individual buttons
-        return buttons.get_butterfly_pressed() or buttons.get_pressed()
+        return buttons.get_pressed()
 
     return check_interrupt
 
@@ -115,8 +114,7 @@ def main():
         check_brightness_buttons(su)
 
         # Check for button press (use queued button or poll for new one)
-        # Check butterfly button first, then individual buttons
-        pressed = next_button or buttons.get_butterfly_pressed() or buttons.get_pressed()
+        pressed = next_button or buttons.get_pressed()
         next_button = None  # Clear queued button
 
         if pressed:

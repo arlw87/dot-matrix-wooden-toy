@@ -114,22 +114,6 @@ def get_pressed():
     return None
 
 
-def get_butterfly_pressed():
-    """
-    Check if sleep button is pressed for butterfly.
-    Returns 'butterfly' if pressed, None otherwise.
-    """
-    if _stellar_unicorn is None:
-        return None
-
-    from stellar import StellarUnicorn
-    pressed = _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_SLEEP)
-    if pressed:
-        print("[BTN DEBUG] Sleep button pressed - returning butterfly")
-        return 'butterfly'
-    return None
-
-
 def any_pressed():
     """Check if any button is currently pressed (no debounce)."""
     for name in _buttons:
