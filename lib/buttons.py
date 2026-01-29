@@ -102,6 +102,25 @@ def get_pressed():
     return None
 
 
+def get_combo_pressed():
+    """
+    Check if heart+star (A+B) combo is pressed.
+    Returns 'butterfly' if both pressed, None otherwise.
+    """
+    heart_pressed = (
+        ('heart' in _buttons and _buttons['heart'].value() == 0) or
+        _check_onboard_button('heart')
+    )
+    star_pressed = (
+        ('star' in _buttons and _buttons['star'].value() == 0) or
+        _check_onboard_button('star')
+    )
+
+    if heart_pressed and star_pressed:
+        return 'butterfly'
+    return None
+
+
 def any_pressed():
     """Check if any button is currently pressed (no debounce)."""
     for name in _buttons:
