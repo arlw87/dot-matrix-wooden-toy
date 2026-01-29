@@ -116,14 +116,14 @@ def get_pressed():
 
 def get_combo_pressed():
     """
-    Check if volume up button is pressed for butterfly.
+    Check if sleep button is pressed for butterfly.
     Returns 'butterfly' if pressed, None otherwise.
     """
     if _stellar_unicorn is None:
         return None
 
     from stellar import StellarUnicorn
-    if _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_VOLUME_UP):
+    if _stellar_unicorn.is_pressed(StellarUnicorn.SWITCH_SLEEP):
         return 'butterfly'
     return None
 
