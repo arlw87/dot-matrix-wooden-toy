@@ -1,6 +1,7 @@
 """
 Heart animation - a pink beating/pulsing heart.
 Plays for ~5 seconds with heartbeat sound, then holds final frame for 5 seconds.
+Heart is smaller at rest, expands to full size on each beat (single beat pattern).
 """
 
 import time
@@ -76,24 +77,23 @@ def play(su, graphics, check_interrupt=None):
 
         # Calculate beat phase (pulsing effect)
         t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
-        # Two-phase heartbeat: quick expand, slow contract
+        # Single beat: quick expand, slow contract
         beat_cycle = (t * beat_speed * 1.2) % 1.0
 
+        # Smaller at rest (0.85), expands to full size (1.15) on beat
+        rest_scale = 0.85
+        max_scale = 1.15
+        scale_range = max_scale - rest_scale  # 0.3
+
         if beat_cycle < 0.15:
-            # First beat - quick expand
-            scale = 1.0 + 0.15 * (beat_cycle / 0.15)
-        elif beat_cycle < 0.25:
-            # Contract
-            scale = 1.15 - 0.15 * ((beat_cycle - 0.15) / 0.1)
+            # Quick expand
+            scale = rest_scale + scale_range * (beat_cycle / 0.15)
         elif beat_cycle < 0.35:
-            # Second beat - smaller expand
-            scale = 1.0 + 0.1 * ((beat_cycle - 0.25) / 0.1)
-        elif beat_cycle < 0.5:
-            # Contract back
-            scale = 1.1 - 0.1 * ((beat_cycle - 0.35) / 0.15)
+            # Slow contract
+            scale = max_scale - scale_range * ((beat_cycle - 0.15) / 0.2)
         else:
             # Rest phase
-            scale = 1.0
+            scale = rest_scale
 
         # Clear and draw heart
         graphics.set_pen(graphics.create_pen(0, 0, 0))
@@ -110,11 +110,11 @@ def play(su, graphics, check_interrupt=None):
         time.sleep_ms(33)  # ~30 fps
         frame += 1
 
-    # Hold phase (5 seconds) - show final heart
+    # Hold phase (5 seconds) - show final heart at rest size
     graphics.set_pen(graphics.create_pen(0, 0, 0))
     graphics.clear()
 
-    pixels = get_heart_pixels(1.0)
+    pixels = get_heart_pixels(0.85)
     pen = graphics.create_pen(r, g, b)
     graphics.set_pen(pen)
     for x, y in pixels:
