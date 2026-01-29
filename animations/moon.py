@@ -12,7 +12,7 @@ SOUND_FILE = "sounds/moon.wav"
 
 
 def get_moon_pixels(cx, cy, radius):
-    """Generate a crescent moon shape."""
+    """Generate a rounder crescent moon shape."""
     pixels = []
     for y in range(16):
         for x in range(16):
@@ -23,9 +23,10 @@ def get_moon_pixels(cx, cy, radius):
             # Main circle
             if dist <= radius:
                 # Cut out inner circle offset to create crescent
-                inner_cx = cx + radius * 0.5
+                # Larger offset = thicker/rounder crescent
+                inner_cx = cx + radius * 0.7
                 inner_dist = math.sqrt((x - inner_cx) ** 2 + dy * dy)
-                if inner_dist > radius * 0.85:
+                if inner_dist > radius * 0.75:
                     pixels.append((x, y))
     return pixels
 
@@ -96,15 +97,15 @@ def play(su, graphics, check_interrupt=None):
         graphics.set_pen(graphics.create_pen(*bg_color))
         graphics.clear()
 
-        # Fade in stars (0 to 1 over first 1.5 seconds)
-        fade_in = min(1.0, t / 1.5)
-
-        # Draw stars with twinkling
-        for star in stars:
-            twinkle = 0.7 + 0.3 * math.sin(t * 3 + star['twinkle_offset'])
-            brightness = int(star['brightness'] * fade_in * twinkle)
-            graphics.set_pen(graphics.create_pen(brightness, brightness, brightness))
-            graphics.pixel(star['x'], star['y'])
+        # Only draw stars after moon reaches final position (t >= 4)
+        if t >= 4.0:
+            # Fade in stars over 1 second after moon arrives
+            star_fade = min(1.0, (t - 4.0) / 1.0)
+            for star in stars:
+                twinkle = 0.7 + 0.3 * math.sin(t * 3 + star['twinkle_offset'])
+                brightness = int(star['brightness'] * star_fade * twinkle)
+                graphics.set_pen(graphics.create_pen(brightness, brightness, brightness))
+                graphics.pixel(star['x'], star['y'])
 
         # Calculate moon position (rising from bottom-left to center)
         moon_cx = start_cx + (end_cx - start_cx) * progress
