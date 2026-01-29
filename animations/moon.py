@@ -1,5 +1,5 @@
 """
-Moon/Night Sky animation - crescent moon rises from bottom-left to center.
+Moon/Night Sky animation - full moon rises from bottom-left to center.
 Plays for ~5 seconds with chime sound, then holds final frame for 5 seconds.
 """
 
@@ -12,7 +12,7 @@ SOUND_FILE = "sounds/moon.wav"
 
 
 def get_moon_pixels(cx, cy, radius):
-    """Generate a rounder crescent moon shape."""
+    """Generate a full moon shape."""
     pixels = []
     for y in range(16):
         for x in range(16):
@@ -20,14 +20,8 @@ def get_moon_pixels(cx, cy, radius):
             dy = y - cy
             dist = math.sqrt(dx * dx + dy * dy)
 
-            # Main circle
             if dist <= radius:
-                # Cut out inner circle offset to create crescent
-                # Larger offset = thicker/rounder crescent
-                inner_cx = cx + radius * 0.7
-                inner_dist = math.sqrt((x - inner_cx) ** 2 + dy * dy)
-                if inner_dist > radius * 0.75:
-                    pixels.append((x, y))
+                pixels.append((x, y))
     return pixels
 
 
@@ -47,8 +41,8 @@ def play(su, graphics, check_interrupt=None):
     moon_brightness = random.randint(200, 255)
     num_stars = random.randint(8, 15)
 
-    # Moon parameters - 2.5x larger (radius 3 -> 7.5, capped at 7 to fit)
-    moon_radius = 7
+    # Full moon, slightly smaller
+    moon_radius = 6
     # Moon rises from bottom-left (off screen) to center
     start_cx, start_cy = -3, 19
     end_cx, end_cy = 8, 8
