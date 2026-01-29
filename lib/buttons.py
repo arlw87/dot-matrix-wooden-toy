@@ -88,6 +88,17 @@ def get_pressed():
     """
     current_time = time.ticks_ms()
 
+    # Debug: check raw state of all buttons
+    pressed_buttons = []
+    for name in ['heart', 'star', 'moon', 'flower']:
+        gpio_pressed = name in _buttons and _buttons[name].value() == 0
+        onboard_pressed = _check_onboard_button(name)
+        if gpio_pressed or onboard_pressed:
+            pressed_buttons.append(f"{name}({'G' if gpio_pressed else ''}{'O' if onboard_pressed else ''})")
+
+    if pressed_buttons:
+        print(f"[BTN DEBUG] Raw pressed: {', '.join(pressed_buttons)}")
+
     for name in ['heart', 'star', 'moon', 'flower']:
         # Check GPIO button
         gpio_pressed = name in _buttons and _buttons[name].value() == 0
@@ -98,6 +109,7 @@ def get_pressed():
             # Check debounce
             if time.ticks_diff(current_time, _last_press_time[name]) > DEBOUNCE_MS:
                 _last_press_time[name] = current_time
+                print(f"[BTN DEBUG] Returning: {name}")
                 return name
     return None
 
