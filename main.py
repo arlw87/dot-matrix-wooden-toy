@@ -8,12 +8,18 @@ colorful animations with sound effects.
 Hardware: Pimoroni Stellar Unicorn with Raspberry Pi Pico 2 W
 """
 
+import gc
+gc.collect()  # Clean memory before any allocations
+
+# CRITICAL: Import sound FIRST to allocate audio buffer before fragmentation
+from lib import sound
+
 import time
 from stellar import StellarUnicorn
 from picographics import PicoGraphics, DISPLAY_STELLAR_UNICORN
 
-# Import our modules
-from lib import display, sound, buttons, sleep
+# Import remaining modules
+from lib import display, buttons, sleep
 from animations import get_animation, play_boot
 
 # Configuration
@@ -33,8 +39,8 @@ def setup():
     su.set_brightness(DEFAULT_BRIGHTNESS)
     sound.set_volume(su, VOLUME)
 
-    # Initialize buttons
-    buttons.init()
+    # Initialize buttons (pass su to enable onboard button testing)
+    buttons.init(su)
 
     # Initialize sleep timer
     sleep.init()
@@ -92,8 +98,8 @@ def main():
     display.clear(graphics, su)
     print("Ready - waiting for button press...")
 
-    # Main loop
-    current_animation = None
+    # Track next button to play (for immediate interrupt handling)
+    next_button = None
 
     while True:
         # Check for auto-sleep
@@ -102,13 +108,15 @@ def main():
             sleep.enter_sleep(su, graphics)
             print("Woke from sleep")
             # After wake, just go back to idle (no boot animation per PRD)
+            next_button = None
             continue
 
         # Handle brightness buttons
         check_brightness_buttons(su)
 
-        # Check for button press
-        pressed = buttons.get_pressed()
+        # Check for button press (use queued button or poll for new one)
+        pressed = next_button or buttons.get_pressed()
+        next_button = None  # Clear queued button
 
         if pressed:
             print(f"Button pressed: {pressed}")
@@ -124,16 +132,16 @@ def main():
                 # Create interrupt checker
                 check_interrupt = create_interrupt_checker(su)
 
-                # Play the animation
-                completed = animation.play(su, graphics, check_interrupt)
+                # Play the animation - returns None if completed, or button name if interrupted
+                interrupted_by = animation.play(su, graphics, check_interrupt)
 
-                if completed:
-                    print(f"Animation {pressed} completed")
+                if interrupted_by:
+                    print(f"Animation {pressed} interrupted by {interrupted_by}")
+                    # Queue the interrupting button for immediate playback
+                    next_button = interrupted_by
                 else:
-                    print(f"Animation {pressed} interrupted")
-
-                # Clear display after animation (if not interrupted)
-                if completed:
+                    print(f"Animation {pressed} completed")
+                    # Clear display after animation completes normally
                     display.clear(graphics, su)
 
                 # Reset sleep timer after animation ends

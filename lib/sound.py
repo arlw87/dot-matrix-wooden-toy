@@ -1,23 +1,32 @@
 """
 WAV playback helpers for the Stellar Unicorn.
 Loads 16-bit PCM mono WAV files and plays via the built-in speaker.
+
+Uses a pre-allocated buffer to avoid memory fragmentation issues.
 """
 
 import struct
+import gc
 
-# Cache for loaded WAV data to avoid reloading from flash
-_wav_cache = {}
+# Pre-allocate audio buffer EARLY before memory fragments
+# 200KB should fit the largest WAV file (~185KB)
+# This MUST happen at module import time, before other allocations
+gc.collect()  # Clean up before allocation
+AUDIO_BUFFER_SIZE = 200000
+_audio_buffer = bytearray(AUDIO_BUFFER_SIZE)
+_audio_length = 0  # Actual length of data in buffer
+_current_sample_rate = 16000
 
 
 def load_wav(filename):
     """
-    Load a WAV file and return audio data as a bytearray.
-    Caches the result to avoid repeated flash reads.
+    Load a WAV file into the pre-allocated buffer.
 
-    Returns: (audio_data, sample_rate)
+    Returns: (memoryview of audio data, sample_rate)
+
+    Note: Each call overwrites the previous audio data.
     """
-    if filename in _wav_cache:
-        return _wav_cache[filename]
+    global _audio_length, _current_sample_rate
 
     with open(filename, 'rb') as f:
         # Read RIFF header
@@ -31,7 +40,7 @@ def load_wav(filename):
             raise ValueError("Not a valid WAV file")
 
         # Find fmt chunk
-        sample_rate = 16000  # Default
+        _current_sample_rate = 16000  # Default
         while True:
             chunk_id = f.read(4)
             if len(chunk_id) < 4:
@@ -42,16 +51,19 @@ def load_wav(filename):
                 fmt_data = f.read(chunk_size)
                 audio_format = struct.unpack('<H', fmt_data[0:2])[0]
                 num_channels = struct.unpack('<H', fmt_data[2:4])[0]
-                sample_rate = struct.unpack('<I', fmt_data[4:8])[0]
+                _current_sample_rate = struct.unpack('<I', fmt_data[4:8])[0]
                 # We expect 16-bit PCM mono
                 if audio_format != 1:
                     raise ValueError("Only PCM format supported")
                 if num_channels != 1:
                     raise ValueError("Only mono audio supported")
             elif chunk_id == b'data':
-                audio_data = bytearray(f.read(chunk_size))
-                _wav_cache[filename] = (audio_data, sample_rate)
-                return audio_data, sample_rate
+                if chunk_size > AUDIO_BUFFER_SIZE:
+                    raise ValueError(f"Audio too large: {chunk_size} > {AUDIO_BUFFER_SIZE}")
+                # Read directly into pre-allocated buffer
+                _audio_length = f.readinto(_audio_buffer)
+                # Return a memoryview of just the valid portion
+                return memoryview(_audio_buffer)[:_audio_length], _current_sample_rate
             else:
                 f.read(chunk_size)  # Skip unknown chunks
 

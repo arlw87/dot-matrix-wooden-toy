@@ -17,10 +17,10 @@ def play(su, graphics, check_interrupt=None):
     Args:
         su: Stellar Unicorn instance
         graphics: PicoGraphics instance
-        check_interrupt: Optional callback that returns True if animation should stop
+        check_interrupt: Optional callback that returns button name if pressed
 
     Returns:
-        True if completed, False if interrupted
+        None if completed, button name (str) if interrupted
     """
     # Start the boot sound
     sound.play(su, SOUND_FILE)
@@ -32,9 +32,10 @@ def play(su, graphics, check_interrupt=None):
     frame = 0
     while time.ticks_diff(time.ticks_ms(), start_time) < duration_ms:
         # Check for interrupt
-        if check_interrupt and check_interrupt():
+        interrupted_by = check_interrupt() if check_interrupt else None
+        if interrupted_by:
             sound.stop(su)
-            return False
+            return interrupted_by
 
         # Clear display
         graphics.set_pen(graphics.create_pen(0, 0, 0))
@@ -70,7 +71,7 @@ def play(su, graphics, check_interrupt=None):
     # Clear display
     display.clear(graphics, su)
 
-    return True
+    return None  # Completed normally
 
 
 def hsv_to_rgb(h, s, v):

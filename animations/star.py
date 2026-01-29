@@ -78,10 +78,10 @@ def play(su, graphics, check_interrupt=None):
     Args:
         su: Stellar Unicorn instance
         graphics: PicoGraphics instance
-        check_interrupt: Optional callback that returns True if animation should stop
+        check_interrupt: Optional callback that returns button name if pressed
 
     Returns:
-        True if completed normally, False if interrupted
+        None if completed normally, button name (str) if interrupted
     """
     # Random variations per PRD
     base_yellow = (255, 220, 0)
@@ -109,9 +109,10 @@ def play(su, graphics, check_interrupt=None):
     final_y = 7.5
 
     while time.ticks_diff(time.ticks_ms(), start_time) < animation_duration_ms:
-        if check_interrupt and check_interrupt():
+        interrupted_by = check_interrupt() if check_interrupt else None
+        if interrupted_by:
             sound.stop(su)
-            return False
+            return interrupted_by
 
         t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
 
@@ -157,8 +158,9 @@ def play(su, graphics, check_interrupt=None):
     hold_duration_ms = 5000
 
     while time.ticks_diff(time.ticks_ms(), hold_start) < hold_duration_ms:
-        if check_interrupt and check_interrupt():
-            return False
+        interrupted_by = check_interrupt() if check_interrupt else None
+        if interrupted_by:
+            return interrupted_by
         time.sleep_ms(50)
 
-    return True
+    return None  # Completed normally
