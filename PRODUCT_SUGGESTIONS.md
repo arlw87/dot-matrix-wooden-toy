@@ -84,3 +84,42 @@ No resistors needed - code uses internal pull-ups.
 | GP1 | Star |
 | GP2 | Butterfly |
 | GP3 | Flower |
+
+---
+
+## Battery Power
+
+### Recommended: 3xAA Battery Holder
+
+| Product | Dimensions | Price | Notes |
+|---------|------------|-------|-------|
+| [Pimoroni 3xAA Holder](https://shop.pimoroni.com/en-us/products/3-x-aa-battery-holder-with-switch-and-jst-ph-connector) | ~58 x 48 x 15mm | ~£3 | **Recommended** - JST-PH connector, switch, guaranteed compatible |
+| [Adafruit 3xAA Holder #4779](https://www.adafruit.com/product/4779) | 78 x 48 x 18mm | ~$3 | JST-PH connector, switch, well documented |
+
+### Why 3xAA (not 4xAA)?
+- 3xAA alkaline = 4.5V fresh, 2.7V depleted
+- 3xAA NiMH = 3.6V fresh, 3.0V depleted
+- 4xAA = 6V (alkaline) - **too high, may damage board**
+- Stellar Unicorn expects LiPo range (~3.3-4.5V)
+
+### Voltage Behavior
+| Voltage | LED Behavior |
+|---------|--------------|
+| 3.6V+ | Optimal - full brightness, accurate colors |
+| 2.9-3.6V | Works but blue LEDs start fading |
+| <2.9V | Noticeably dim, color shift |
+| ~2.5V | May not boot reliably |
+
+### Battery Type Comparison
+| Type | Pros | Cons |
+|------|------|------|
+| NiMH rechargeable | Rechargeable, safer for toddler toy, flat discharge curve | Lower starting voltage (3.6V) |
+| Alkaline | Higher starting voltage (4.5V), gradual dimming warning | Not rechargeable, ongoing cost |
+
+### Safety Notes (vs LiPo)
+- **No fire/swelling risk** - safe if toddler drops/throws toy
+- **No charging circuit needed** - simpler build
+- **Easy battery replacement** - no soldering to swap batteries
+
+### Connection
+Stellar Unicorn has JST-PH battery connector - Pimoroni holder plugs directly in, no soldering required.
