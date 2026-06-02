@@ -80,10 +80,10 @@ def play(su, graphics, check_interrupt=None):
         # Draw stem
         graphics.set_pen(graphics.create_pen(*stem_color))
         for y in range(current_stem_top, stem_bottom + 1):
-            graphics.pixel(stem_x, y)
+            display.pixel(graphics, stem_x, y)
             # Thicker stem at bottom
             if y > stem_bottom - 3:
-                graphics.pixel(stem_x + 1, y)
+                display.pixel(graphics, stem_x + 1, y)
 
         # Phase 2: Leaves appear (20-60% of animation)
         if progress > 0.2:
@@ -95,17 +95,17 @@ def play(su, graphics, check_interrupt=None):
             if current_stem_top <= leaf_y:
                 leaf_size = int(3 * leaf_progress)
                 for i in range(leaf_size):
-                    graphics.pixel(stem_x - 1 - i, leaf_y + i)
+                    display.pixel(graphics, stem_x - 1 - i, leaf_y + i)
                     if i > 0:
-                        graphics.pixel(stem_x - 1 - i, leaf_y + i - 1)
+                        display.pixel(graphics, stem_x - 1 - i, leaf_y + i - 1)
 
             # Right leaf (slightly higher)
             leaf_y2 = stem_bottom - 7
             if current_stem_top <= leaf_y2:
                 for i in range(leaf_size):
-                    graphics.pixel(stem_x + 1 + i, leaf_y2 + i)
+                    display.pixel(graphics, stem_x + 1 + i, leaf_y2 + i)
                     if i > 0:
-                        graphics.pixel(stem_x + 1 + i, leaf_y2 + i - 1)
+                        display.pixel(graphics, stem_x + 1 + i, leaf_y2 + i - 1)
 
         # Phase 3: Flower blooms (50-100% of animation)
         if progress > 0.5:
@@ -131,7 +131,7 @@ def play(su, graphics, check_interrupt=None):
                             x = int(px + dx)
                             y = int(py + dy)
                             if 0 <= x < 16 and 0 <= y < 16:
-                                graphics.pixel(x, y)
+                                display.pixel(graphics, x, y)
 
             # Draw center
             if bloom_progress > 0.3:
@@ -144,7 +144,7 @@ def play(su, graphics, check_interrupt=None):
                             x = int(flower_cx + dx)
                             y = int(flower_cy + dy)
                             if 0 <= x < 16 and 0 <= y < 16:
-                                graphics.pixel(x, y)
+                                display.pixel(graphics, x, y)
 
         su.update(graphics)
         time.sleep_ms(33)  # ~30 fps
@@ -156,23 +156,23 @@ def play(su, graphics, check_interrupt=None):
     # Final stem
     graphics.set_pen(graphics.create_pen(*stem_color))
     for y in range(stem_top, stem_bottom + 1):
-        graphics.pixel(stem_x, y)
+        display.pixel(graphics, stem_x, y)
         if y > stem_bottom - 3:
-            graphics.pixel(stem_x + 1, y)
+            display.pixel(graphics, stem_x + 1, y)
 
     # Final leaves
     graphics.set_pen(graphics.create_pen(*leaf_color))
     leaf_y = stem_bottom - 4
     for i in range(3):
-        graphics.pixel(stem_x - 1 - i, leaf_y + i)
+        display.pixel(graphics, stem_x - 1 - i, leaf_y + i)
         if i > 0:
-            graphics.pixel(stem_x - 1 - i, leaf_y + i - 1)
+            display.pixel(graphics, stem_x - 1 - i, leaf_y + i - 1)
 
     leaf_y2 = stem_bottom - 7
     for i in range(3):
-        graphics.pixel(stem_x + 1 + i, leaf_y2 + i)
+        display.pixel(graphics, stem_x + 1 + i, leaf_y2 + i)
         if i > 0:
-            graphics.pixel(stem_x + 1 + i, leaf_y2 + i - 1)
+            display.pixel(graphics, stem_x + 1 + i, leaf_y2 + i - 1)
 
     # Final petals
     flower_cx = stem_x + 0.5
@@ -191,7 +191,7 @@ def play(su, graphics, check_interrupt=None):
                     x = int(px + dx)
                     y = int(py + dy)
                     if 0 <= x < 16 and 0 <= y < 16:
-                        graphics.pixel(x, y)
+                        display.pixel(graphics, x, y)
 
     # Final center
     graphics.set_pen(graphics.create_pen(*center_color))
@@ -201,7 +201,7 @@ def play(su, graphics, check_interrupt=None):
                 x = int(flower_cx + dx)
                 y = int(flower_cy + dy)
                 if 0 <= x < 16 and 0 <= y < 16:
-                    graphics.pixel(x, y)
+                    display.pixel(graphics, x, y)
 
     su.update(graphics)
 

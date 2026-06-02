@@ -59,7 +59,7 @@ def play(su, graphics, check_interrupt=None):
                 if dist <= max_radius + 2:
                     r, g, b = hsv_to_rgb(hue, 1.0, 1.0)
                     graphics.set_pen(graphics.create_pen(r, g, b))
-                    graphics.pixel(x, y)
+                    display.pixel(graphics, x, y)
 
         su.update(graphics)
         frame += 1

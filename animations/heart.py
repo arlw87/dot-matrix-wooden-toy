@@ -104,7 +104,7 @@ def play(su, graphics, check_interrupt=None):
         graphics.set_pen(pen)
 
         for x, y in pixels:
-            graphics.pixel(x, y)
+            display.pixel(graphics, x, y)
 
         su.update(graphics)
         time.sleep_ms(33)  # ~30 fps
@@ -118,7 +118,7 @@ def play(su, graphics, check_interrupt=None):
     pen = graphics.create_pen(r, g, b)
     graphics.set_pen(pen)
     for x, y in pixels:
-        graphics.pixel(x, y)
+        display.pixel(graphics, x, y)
     su.update(graphics)
 
     hold_start = time.ticks_ms()

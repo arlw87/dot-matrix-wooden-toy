@@ -126,7 +126,7 @@ def play(su, graphics, check_interrupt=None):
                 twinkle = 0.7 + 0.3 * math.sin(t * 3 + star['twinkle_offset'])
                 brightness = int(star['brightness'] * star_fade * twinkle)
                 graphics.set_pen(graphics.create_pen(brightness, brightness, brightness))
-                graphics.pixel(star['x'], star['y'])
+                display.pixel(graphics, star['x'], star['y'])
 
         # Calculate moon position (rising from bottom-left to center)
         moon_cx = start_cx + (end_cx - start_cx) * progress
@@ -136,10 +136,10 @@ def play(su, graphics, check_interrupt=None):
         moon_pixels, crater_pixels = get_moon_pixels(moon_cx, moon_cy, moon_radius, with_craters=True)
         graphics.set_pen(graphics.create_pen(*moon_color))
         for x, y in moon_pixels:
-            graphics.pixel(x, y)
+            display.pixel(graphics, x, y)
         graphics.set_pen(graphics.create_pen(*crater_color))
         for x, y in crater_pixels:
-            graphics.pixel(x, y)
+            display.pixel(graphics, x, y)
 
         su.update(graphics)
         time.sleep_ms(33)  # ~30 fps
@@ -166,15 +166,15 @@ def play(su, graphics, check_interrupt=None):
             twinkle = 0.7 + 0.3 * math.sin(t * 3 + star['twinkle_offset'])
             brightness = int(star['brightness'] * twinkle)
             graphics.set_pen(graphics.create_pen(brightness, brightness, brightness))
-            graphics.pixel(star['x'], star['y'])
+            display.pixel(graphics, star['x'], star['y'])
 
         # Draw moon at center with craters
         graphics.set_pen(graphics.create_pen(*moon_color))
         for x, y in final_moon_pixels:
-            graphics.pixel(x, y)
+            display.pixel(graphics, x, y)
         graphics.set_pen(graphics.create_pen(*crater_color))
         for x, y in final_crater_pixels:
-            graphics.pixel(x, y)
+            display.pixel(graphics, x, y)
 
         su.update(graphics)
         time.sleep_ms(50)

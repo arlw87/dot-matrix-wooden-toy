@@ -16,10 +16,15 @@ def fill(graphics, su, r, g, b):
     su.update(graphics)
 
 
+def pixel(graphics, x, y):
+    """Draw a pixel at (x, y) with 90° anti-clockwise rotation applied."""
+    graphics.pixel(int(y), 15 - int(x))
+
+
 def set_pixel(graphics, x, y, r, g, b):
     """Set a single pixel to a colour (does not update display)."""
     graphics.set_pen(graphics.create_pen(r, g, b))
-    graphics.pixel(x, y)
+    pixel(graphics, x, y)
 
 
 def draw_sprite(graphics, sprite, offset_x=0, offset_y=0, r=255, g=255, b=255):
@@ -33,7 +38,7 @@ def draw_sprite(graphics, sprite, offset_x=0, offset_y=0, r=255, g=255, b=255):
         px = x + offset_x
         py = y + offset_y
         if 0 <= px < 16 and 0 <= py < 16:
-            graphics.pixel(px, py)
+            pixel(graphics, px, py)
 
 
 def fade_to_black(graphics, su, steps=10, delay_ms=50):

@@ -139,7 +139,7 @@ def play(su, graphics, check_interrupt=None):
 
         for x, y in pixels:
             if 0 <= x < 16 and 0 <= y < 16:
-                graphics.pixel(int(x), int(y))
+                display.pixel(graphics, int(x), int(y))
 
         su.update(graphics)
         time.sleep_ms(33)  # ~30 fps
@@ -153,7 +153,7 @@ def play(su, graphics, check_interrupt=None):
     graphics.set_pen(pen)
     for x, y in pixels:
         if 0 <= x < 16 and 0 <= y < 16:
-            graphics.pixel(int(x), int(y))
+            display.pixel(graphics, int(x), int(y))
     su.update(graphics)
 
     hold_start = time.ticks_ms()
