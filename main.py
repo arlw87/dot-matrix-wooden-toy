@@ -2,10 +2,16 @@
 Dot Matrix Wooden Toy - Main Program
 =====================================
 An interactive toy for toddlers featuring a 16x16 RGB LED matrix.
-Six push-to-make buttons (wired to MCP23017 GPB0-GPB5) each trigger
-a different animation: heart, star, moon, flower, butterfly, boot.
 
-Hardware: Pimoroni Stellar Unicorn with Raspberry Pi Pico 2 W + MCP23017
+Button mode (default):
+  Six push-to-make buttons (MCP23017 GPB0-GPB5) each trigger an animation:
+  heart, star, moon, flower, butterfly, boot.
+
+Ball mode:
+  Double-tap the toy to enter. Tilt to roll a glowing ball around the screen.
+  Double-tap again (or press any button) to return to button mode.
+
+Hardware: Pimoroni Stellar Unicorn + Raspberry Pi Pico 2 W + MCP23017 + BMA400
 """
 
 import gc
@@ -19,7 +25,7 @@ from stellar import StellarUnicorn
 from picographics import PicoGraphics, DISPLAY_STELLAR_UNICORN
 
 # Import remaining modules
-from lib import display, buttons, sleep
+from lib import display, buttons, sleep, bma400
 from animations import get_animation, play_boot
 
 # Configuration
@@ -31,18 +37,14 @@ VOLUME = 0.45             # Fixed moderate volume (~45%)
 
 def setup():
     """Initialize hardware and return instances."""
-    # Create Stellar Unicorn and graphics instances
     su = StellarUnicorn()
     graphics = PicoGraphics(display=DISPLAY_STELLAR_UNICORN)
 
-    # Set default brightness and volume
     su.set_brightness(DEFAULT_BRIGHTNESS)
     sound.set_volume(su, VOLUME)
 
-    # Initialize buttons (pass su to enable onboard button testing)
     buttons.init(su)
-
-    # Initialize sleep timer
+    bma400.init()
     sleep.init()
 
     return su, graphics
@@ -56,97 +58,109 @@ def check_brightness_buttons(su):
     brightness_changed = False
     current = su.get_brightness()
 
-    # Check brightness up (Stellar Unicorn button A)
     if su.is_pressed(StellarUnicorn.SWITCH_BRIGHTNESS_UP):
-        new_brightness = min(MAX_BRIGHTNESS, current + 0.1)
-        su.set_brightness(new_brightness)
+        su.set_brightness(min(MAX_BRIGHTNESS, current + 0.1))
         brightness_changed = True
 
-    # Check brightness down (Stellar Unicorn button B)
     if su.is_pressed(StellarUnicorn.SWITCH_BRIGHTNESS_DOWN):
-        new_brightness = max(MIN_BRIGHTNESS, current - 0.1)
-        su.set_brightness(new_brightness)
+        su.set_brightness(max(MIN_BRIGHTNESS, current - 0.1))
         brightness_changed = True
 
     return brightness_changed
 
 
 def create_interrupt_checker(su):
-    """
-    Create a closure that checks for button interrupts.
-    Returns a function that returns the name of pressed button or None.
-    """
+    """Create a closure that checks for button interrupts during animations."""
     def check_interrupt():
-        # Also handle brightness buttons
         check_brightness_buttons(su)
         return buttons.get_pressed()
-
     return check_interrupt
+
+
+def run_ball_mode(su, graphics):
+    """
+    Enter tilt-ball mode. Runs until double-tap or button press.
+    Returns the name of any button pressed during the game (to queue its
+    animation on return), or None if exited via double-tap.
+    """
+    from games import tilt_ball
+
+    print("Entering ball mode")
+    sleep.reset_timer()
+
+    # Capture which button (if any) ended the game
+    exit_button = [None]
+
+    def check_exit():
+        sleep.reset_timer()  # movement keeps toy awake
+        if bma400.double_tap_detected():
+            return True
+        b = buttons.get_pressed()
+        if b:
+            exit_button[0] = b
+            return True
+        return False
+
+    tilt_ball.run(su, graphics, check_exit)
+
+    print("Exiting ball mode (button={})".format(exit_button[0]))
+    sleep.reset_timer()
+    return exit_button[0]
 
 
 def main():
     """Main program loop."""
-    # Setup hardware
     su, graphics = setup()
 
-    # Play boot animation
     print("Playing boot animation...")
     play_boot(su, graphics)
 
-    # Clear display and go to idle
     display.clear(graphics, su)
-    print("Ready - waiting for button press...")
+    print("Ready - waiting for button press or double-tap...")
 
-    # Track next button to play (for immediate interrupt handling)
     next_button = None
 
     while True:
-        # Check for auto-sleep
+        # Auto-sleep
         if sleep.should_sleep():
             print("Entering sleep mode...")
             sleep.enter_sleep(su, graphics)
             print("Woke from sleep")
-            # After wake, just go back to idle (no boot animation per PRD)
             next_button = None
             continue
 
-        # Handle brightness buttons
+        # Double-tap → ball mode
+        if bma400.double_tap_detected():
+            sound.stop(su)
+            queued = run_ball_mode(su, graphics)
+            next_button = queued  # play animation if a button ended the game
+            continue
+
         check_brightness_buttons(su)
 
-        # Check for button press (use queued button or poll for new one)
+        # Button animation mode
         pressed = next_button or buttons.get_pressed()
-        next_button = None  # Clear queued button
+        next_button = None
 
         if pressed:
             print(f"Button pressed: {pressed}")
             sleep.reset_timer()
 
-            # Get the animation for this button
             animation = get_animation(pressed)
-
             if animation:
-                # Stop any playing sound
                 sound.stop(su)
-
-                # Create interrupt checker
                 check_interrupt = create_interrupt_checker(su)
-
-                # Play the animation - returns None if completed, or button name if interrupted
                 interrupted_by = animation.play(su, graphics, check_interrupt)
 
                 if interrupted_by:
                     print(f"Animation {pressed} interrupted by {interrupted_by}")
-                    # Queue the interrupting button for immediate playback
                     next_button = interrupted_by
                 else:
                     print(f"Animation {pressed} completed")
-                    # Clear display after animation completes normally
                     display.clear(graphics, su)
 
-                # Reset sleep timer after animation ends
                 sleep.reset_timer()
 
-        # Small delay to prevent busy-waiting
         time.sleep_ms(10)
 
 
