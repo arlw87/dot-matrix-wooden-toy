@@ -23,7 +23,7 @@ from lib import display, buttons, sleep
 from animations import get_animation, play_boot
 
 # Configuration
-DEFAULT_BRIGHTNESS = 0.75  # 75% brightness
+DEFAULT_BRIGHTNESS = 1  # 75% brightness
 MIN_BRIGHTNESS = 0.1      # Minimum brightness floor
 MAX_BRIGHTNESS = 1.0
 VOLUME = 0.45             # Fixed moderate volume (~45%)
