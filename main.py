@@ -2,10 +2,10 @@
 Dot Matrix Wooden Toy - Main Program
 =====================================
 An interactive toy for toddlers featuring a 16x16 RGB LED matrix.
-Press one of four buttons (Heart, Star, Moon, Flower) to trigger
-colorful animations with sound effects.
+Six push-to-make buttons (wired to MCP23017 GPB0-GPB5) each trigger
+a different animation: heart, star, moon, flower, butterfly, boot.
 
-Hardware: Pimoroni Stellar Unicorn with Raspberry Pi Pico 2 W
+Hardware: Pimoroni Stellar Unicorn with Raspberry Pi Pico 2 W + MCP23017
 """
 
 import gc
@@ -23,7 +23,7 @@ from lib import display, buttons, sleep
 from animations import get_animation, play_boot
 
 # Configuration
-DEFAULT_BRIGHTNESS = 0.5  # 50% brightness
+DEFAULT_BRIGHTNESS = 0.75  # 75% brightness
 MIN_BRIGHTNESS = 0.1      # Minimum brightness floor
 MAX_BRIGHTNESS = 1.0
 VOLUME = 0.45             # Fixed moderate volume (~45%)
