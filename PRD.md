@@ -18,13 +18,26 @@ Toddlers enjoy simple cause-and-effect interactions. Pressing a button with a re
 | Component | Specification |
 |-----------|--------------|
 | Display & Controller | Pimoroni Stellar Unicorn — 16x16 RGB LED matrix with Raspberry Pi Pico 2 W |
-| Input | 6x arcade push buttons (Heart, Star, Flower, Fish, Rainbow, Sun) |
+| Input | 6x arcade push buttons (Heart, Star, Fish, Flower, Butterfly, Boot) |
 | Button I/O Expander | MCP23017 I2C GPIO expander (address 0x20, I2C0 on GP4/GP5), port B pins GPB0–GPB5 |
 | Accelerometer | SparkFun KX134 Triple Axis Accelerometer (Qwiic/I2C, address 0x1F), shares I2C0 bus |
 | Power | 3xAA battery holder with JST-PH connector (NiMH recommended) |
 | Power Switch | SPST slide switch |
 | Speaker | Built-in 30mm 1W speaker (on Stellar Unicorn) via MAX98357 I2S amplifier |
 | Enclosure | Birch plywood box, wood veneer over display window |
+
+**Button colour map:**
+
+| GPB Pin | Physical Button Colour | Animation | Target Animation Colour |
+|---------|------------------------|-----------|------------------------|
+| GPB0 | Green | Fish | — |
+| GPB1 | Blue | Boot (startup only) | — |
+| GPB2 | Red | Heart | — |
+| GPB3 | Pink | Butterfly | — |
+| GPB4 | Black | Flower | — |
+| GPB5 | Yellow | Star | — |
+
+The target animation colour column is to be filled in as each animation's palette is finalised, so that animation colours can be matched to their button colour where possible.
 
 **Veneer note:** The wood veneer absorbs green wavelengths more heavily than red, blue, or yellow. Animations must avoid relying on green as a primary colour.
 
@@ -275,7 +288,65 @@ lib/
 
 ---
 
-## 6. Out of Scope (v1)
+## 6. Animation Candidates
+
+Three button slots remain unassigned (green/GPB0, blue/GPB1, black/GPB4). The locked animations are **heart** (red), **star** (yellow), **butterfly** (pink). The following are all options under consideration for the remaining three slots.
+
+**Display constraints to bear in mind:**
+- 16×16 pixel grid — simple, bold silhouettes only; fine detail is impossible
+- Wood veneer absorbs green wavelengths; avoid green as a primary/dominant colour
+- Bright, saturated colours read best through the veneer
+- Movement and animation are more important than shape complexity at this resolution
+
+**Button colour matching goal:** animation palette should largely echo the physical button colour.
+
+| # | Animation | Natural colours | Button colour match | Animation idea | Veneer-safe? |
+|---|-----------|----------------|---------------------|---------------|--------------|
+| 1 | **Rocket** | Red, orange, white, blue | Any remaining | Launches vertically with an expanding flame/exhaust trail; stars blink in background | ✅ Yes |
+| 2 | **Bee** | Yellow, black | Black (GPB4) | Zigzag buzz path across screen; alternating yellow/black stripes, wings flicker | ✅ Yes |
+| 3 | **Boat** | Blue, white | Blue (GPB1) | Bobs on animated blue waves; white sail catches a breeze; wake ripples behind hull | ✅ Yes |
+| 4 | **Bird** | Blue, orange, red | Blue (GPB1) | Flies across screen with flapping wings; reads very clearly at 16×16 | ✅ Yes |
+| 5 | **Plane** | Blue, white, red | Blue (GPB1) | Flies horizontally with a vapour trail; clean delta or tube-fuselage silhouette | ✅ Yes |
+| 6 | **Fish** | Orange, blue/teal | Blue (GPB1) | Swims horizontally with sinusoidal body wave; already implemented | ✅ Yes |
+| 7 | **Rainbow** | Red, orange, yellow, green, blue | None specific | Bold ROYGBIV arcs sweep across display; most visually striking | ⚠️ Green arc dims |
+| 8 | **Sun** | Yellow, orange, white | None (yellow taken) | Pulsing circle with rays growing outward; already planned (issue #5) | ✅ Yes |
+| 9 | **Car** | Red, orange, yellow | None specific | Profile drives left-right; exhaust puff, spinning wheel dots | ✅ Yes |
+| 10 | **Duck** | Yellow, orange | None (yellow taken) | Waddles or swims; simple round body very readable at 16×16 | ✅ Yes |
+| 11 | **Flower** | Pink, red, orange, yellow | None specific | Petals bloom from centre; already implemented, improvement issue open (#11) | ✅ Yes |
+| 12 | **Train** | Red, orange | None specific | Chugs horizontally with steam puffs above chimney; rectangular body simple at 16×16 | ✅ Yes |
+| 13 | **Owl** | Orange, brown, yellow | None specific | Sits centred; eyes blink, head rotates; wings spread briefly | ✅ Yes |
+| 14 | **Dog** | Orange, tan, brown | None specific | Bouncy walk cycle left-right; tail wag; warm tones | ✅ Yes |
+| 15 | **Cat** | Orange, white | None specific | Stretches or arches back; tail flick; glowing eyes could work | ✅ Yes |
+| 16 | **Dinosaur** | Green (problematic), purple, orange | None specific | Stomps left-right; T-Rex or Brachiosaurus silhouette; natural green clashes with veneer | ⚠️ If green used |
+| 17 | **Bus** | Yellow (taken), red | None specific | Drives left-right; rectangular body, minimal animation scope | ✅ Yes |
+| 18 | **Turtle** | Green, yellow | Green (GPB0) — but veneer absorbs green | Waddles slowly; shell dome visible but detail impossible at 16×16 | ❌ Primary green |
+
+### Ranking (worst → best) for this display
+
+| Rank | Animation | Reasoning |
+|------|-----------|-----------|
+| 1 (worst) | **Bus** | Box shape, zero animation personality, no button colour match |
+| 2 | **Turtle** | Natural green is invisible through veneer; shell detail impossible at 16×16; slow movement |
+| 3 | **Cat** | Too static; tail/arch animation hard to read at low res; no strong button match |
+| 4 | **Dog** | Similar to cat — walk cycle is feasible but tail wag is illegible at 16×16; generic |
+| 5 | **Dinosaur** | Exciting concept but green is a veneer problem; silhouette complexity high for 16×16 |
+| 6 | **Owl** | Round blob shape risks being unreadable; head-turn animation is subtle at this resolution |
+| 7 | **Train** | Horizontal movement works but rectangular body lacks personality; no button match |
+| 8 | **Duck** | Cute and simple enough for 16×16 but yellow competes with the star animation palette |
+| 9 | **Flower** | Already implemented; warm colours fine; but petal count is very coarse at 16×16 |
+| 10 | **Car** | Recognisable profile, good movement, exhaust puff adds life — decent but not distinctive |
+| 11 | **Sun** | Radiating ray animation is clean and readable; warm colours; already planned in issues |
+| 12 | **Rainbow** | Visually boldest of all; ROYGBIV sweeping is striking but green arc will dim through veneer |
+| 13 | **Fish** | Already implemented and working; orange/blue colour pair reads well; swim wave is effective |
+| 14 | **Plane** | Clean silhouette flies naturally across 16×16; vapour trail adds motion; blue matches GPB1 |
+| 15 | **Bird** | Wing-flap cycle is the most legible animal animation at this resolution; blue matches GPB1 |
+| 16 | **Boat** | Blue/white pair matches blue button perfectly; wave bobbing is charming and very readable |
+| 17 | **Bee** | Black/yellow stripes match black button; zigzag flight path is dynamic and exciting for toddlers |
+| 18 (best) | **Rocket** | Most dramatic animation (vertical launch + flame trail + blinking stars); works with any remaining button colour; high toddler appeal |
+
+---
+
+## 7. Out of Scope (v1)
 
 - WiFi features (remote animation updates, clock display)
 - RFID card input

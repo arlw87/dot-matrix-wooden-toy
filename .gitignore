@@ -4,3 +4,7 @@ CLAUDE.md
 
 # Prototype files
 heart_beat.py
+
+# Python bytecode
+__pycache__/
+*.pyc
