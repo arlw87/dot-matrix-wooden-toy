@@ -6,7 +6,7 @@ Pin mapping (active-low, internal pull-ups enabled):
   GPB1 → boot       (blue button)
   GPB2 → heart      (red button)
   GPB3 → butterfly  (pink button)
-  GPB4 → flower     (black button)
+  GPB4 → bee        (black button)
   GPB5 → star       (yellow button)
 """
 
@@ -27,12 +27,12 @@ BUTTON_BITS = {
     'boot':      1,
     'heart':     2,
     'butterfly': 3,
-    'flower':    4,
+    'bee':       4,
     'star':      5,
 }
 
 # Priority order for simultaneous presses
-BUTTON_ORDER = ['heart', 'star', 'fish', 'flower', 'butterfly', 'boot']
+BUTTON_ORDER = ['heart', 'star', 'fish', 'bee', 'butterfly', 'boot']
 
 DEBOUNCE_MS = 50
 
