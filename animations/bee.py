@@ -5,7 +5,7 @@ sounds/bee.wav plays if present; runs silently if the file is absent.
 
 Bee is 12 wide x 8 tall, centred horizontally (anchor bx=2 on 16-wide grid).
 Horizontal orange/black stripes with white wings on left and right sides.
-Background is sky blue.
+Background is green (garden).
 """
 
 import time
@@ -16,10 +16,10 @@ from lib import display, sound
 SOUND_FILE = "sounds/bee.wav"
 
 # ── palette ───────────────────────────────────────────────────────────────────
-_ORANGE = (255, 140,   0)   # bee body warm stripes — more vivid than yellow through veneer
-_DARK   = ( 65,  65,  65)   # bee body black stripes — visible against sky background
+_ORANGE = (255, 140,   0)   # bee body warm stripes
+_DARK   = (  0,   0,   0)   # bee body black stripes — off LEDs contrast against green background
 _WHITE  = (235, 240, 255)   # wings
-_SKY    = ( 20,  60, 130)   # dark sky blue background
+_BG     = (  0, 160,   0)   # green garden background
 
 # ── body pixels: (dx, dy, colour) relative to anchor (bx, by) ────────────────
 _BODY = [
@@ -91,8 +91,8 @@ def _bee_y(t, amp):
 
 
 def _draw_bee(graphics, bx, by, wing_shift):
-    """Clear display to sky blue and draw bee at (bx, by) with given wing state."""
-    graphics.set_pen(graphics.create_pen(*_SKY))
+    """Clear display to green and draw bee at (bx, by) with given wing state."""
+    graphics.set_pen(graphics.create_pen(*_BG))
     graphics.clear()
     for dx, dy, (r, g, b) in _BODY + _wings(wing_shift):
         px, py = bx + dx, by + dy
