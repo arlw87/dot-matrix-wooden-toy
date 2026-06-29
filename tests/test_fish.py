@@ -179,40 +179,5 @@ class FishAnimationTest(unittest.TestCase):
         )
 
 
-# ── Button wiring tests ───────────────────────────────────────────────────────
-
-class ButtonWiringTest(unittest.TestCase):
-
-    def test_fish_mapped_to_gpb0(self):
-        """GPB0 (green button) maps to 'fish'."""
-        from lib import buttons
-        self.assertIn("fish", buttons.BUTTON_BITS)
-        self.assertEqual(buttons.BUTTON_BITS["fish"], 0)
-        self.assertNotIn("moon", buttons.BUTTON_BITS)
-
-    def test_fish_in_button_order(self):
-        """'fish' appears in BUTTON_ORDER; 'moon' does not."""
-        from lib import buttons
-        self.assertIn("fish", buttons.BUTTON_ORDER)
-        self.assertNotIn("moon", buttons.BUTTON_ORDER)
-
-
-# ── Animation registry tests ──────────────────────────────────────────────────
-
-class RegistryTest(unittest.TestCase):
-
-    def test_fish_in_animation_registry(self):
-        """get_animation('fish') returns the fish module."""
-        from animations import get_animation
-        anim = get_animation("fish")
-        self.assertIsNotNone(anim)
-        self.assertTrue(hasattr(anim, "play"))
-
-    def test_moon_removed_from_registry(self):
-        """get_animation('moon') returns None — moon has been replaced by fish."""
-        from animations import get_animation
-        self.assertIsNone(get_animation("moon"))
-
-
 if __name__ == "__main__":
     unittest.main()

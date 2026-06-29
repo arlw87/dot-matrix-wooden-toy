@@ -66,6 +66,8 @@ VERSIONS = [('v1', V1), ('v2', V2), ('v3', V3)]
 #                  mid:   cols 6-9 or 5-10  (flickers)
 #                  hot:   cols 7-8  (2 wide, yellow)
 
+MAGNOLIA = (240, 240, 215)
+
 def _rocket_pixels(palette, ry, flame_len=2, flame_seed=0):
     """Return list of (col, row, rgb). Clips nothing — caller filters out-of-bounds."""
     p = palette
@@ -78,40 +80,45 @@ def _rocket_pixels(palette, ry, flame_len=2, flame_seed=0):
     for col in range(5, 11):
         pxs.append((col, ry + 2, p['nose']))                              # base: 6 wide
 
-    # Body — rows ry+3, ry+4, ry+5 (6 wide)
-    for dy in (3, 4, 5):
+    # Body — rows ry+3 to ry+6 (4 rows, 6 wide)
+    for dy in (3, 4, 5, 6):
         for col in range(5, 11):
             pxs.append((col, ry + dy, p['body']))
 
-    # Fins — rows ry+6 and ry+7
-    # fin portions use nose colour; centre (body width) uses body colour
-    for col in (3, 4):                                                     # left fin, row 6
-        pxs.append((col, ry + 6, p['nose']))
-    for col in range(5, 11):
-        pxs.append((col, ry + 6, p['body']))                              # body centre
-    for col in (11, 12):                                                   # right fin, row 6
-        pxs.append((col, ry + 6, p['nose']))
+    # Window — 2×2 magnolia square centred in the body (rows ry+4, ry+5; cols 7, 8)
+    for dy in (4, 5):
+        for col in (7, 8):
+            pxs.append((col, ry + dy, MAGNOLIA))
 
-    for col in (2, 3, 4):                                                  # left fin, row 7
+    # Fins — rows ry+7 and ry+8
+    # fin portions use nose colour; centre (body width) uses body colour
+    for col in (3, 4):                                                     # left fin, row 7
         pxs.append((col, ry + 7, p['nose']))
     for col in range(5, 11):
         pxs.append((col, ry + 7, p['body']))                              # body centre
-    for col in (11, 12, 13):                                               # right fin, row 7
+    for col in (11, 12):                                                   # right fin, row 7
         pxs.append((col, ry + 7, p['nose']))
 
-    # Flame — starts at ry+8 (nozzle exit, 4 wide)
+    for col in (2, 3, 4):                                                  # left fin, row 8
+        pxs.append((col, ry + 8, p['nose']))
+    for col in range(5, 11):
+        pxs.append((col, ry + 8, p['body']))                              # body centre
+    for col in (11, 12, 13):                                               # right fin, row 8
+        pxs.append((col, ry + 8, p['nose']))
+
+    # Flame — starts at ry+9 (nozzle exit, 4 wide)
     for col in range(6, 10):
-        pxs.append((col, ry + 8, p['flame_outer']))
+        pxs.append((col, ry + 9, p['flame_outer']))
 
     if flame_len >= 2:
         # Flame mid row — wide (6) or narrow (4) based on flicker seed
         cols = range(5, 11) if flame_seed % 2 == 0 else range(6, 10)
         for col in cols:
-            pxs.append((col, ry + 9, p['flame_mid']))
+            pxs.append((col, ry + 10, p['flame_mid']))
 
     if flame_len >= 3:
         for col in (7, 8):
-            pxs.append((col, ry + 10, p['flame_hot']))
+            pxs.append((col, ry + 11, p['flame_hot']))
 
     return pxs
 
@@ -145,19 +152,19 @@ def _render(palette, ry, flame_len=2, flame_seed=0, cell=CELL):
 # Total height ~11 rows — fills most of the 16-row display.
 KEY_FRAMES = [
     # tag   ry  flame_len  seed  label
-    ('000',  9,  1,  0, 'Entering\n(from bottom)'),   # fins at rows 15-16, flame off
-    ('025',  4,  2,  0, '25%\n(rising)'),             # full rocket + flame visible
-    ('050',  0,  2,  1, '50%\n(mid-flight)'),         # nose at top row, all visible
-    ('075', -4,  3,  0, '75%\n(near top)'),           # fins+flame still in frame
-    ('100',-12,  0,  0, 'Hold\n(rocket gone)'),       # fully exited
+    ('000',  8,  1,  0, 'Entering\n(from bottom)'),   # fins at rows 15-16, flame off
+    ('025',  3,  2,  0, '25%\n(rising)'),             # full rocket + flame visible
+    ('050', -1,  2,  1, '50%\n(mid-flight)'),         # nose just off top, all visible
+    ('075', -5,  3,  0, '75%\n(near top)'),           # fins+flame still in frame
+    ('100',-13,  0,  0, 'Hold\n(rocket gone)'),       # fully exited
 ]
 
 FLICKER_FRAMES = [
     # ry  flame_len  seed  label
-    (4,  1,  0, 'Short\nflame'),
-    (4,  2,  0, 'Mid\nflame\n(wide)'),
-    (4,  2,  1, 'Mid\nflame\n(narrow)'),
-    (4,  3,  0, 'Long\nflame'),
+    (3,  1,  0, 'Short\nflame'),
+    (3,  2,  0, 'Mid\nflame\n(wide)'),
+    (3,  2,  1, 'Mid\nflame\n(narrow)'),
+    (3,  3,  0, 'Long\nflame'),
 ]
 
 
