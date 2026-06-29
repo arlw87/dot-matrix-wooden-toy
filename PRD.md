@@ -39,7 +39,7 @@ Toddlers enjoy simple cause-and-effect interactions. Pressing a button with a re
 
 The target animation colour column is to be filled in as each animation's palette is finalised, so that animation colours can be matched to their button colour where possible.
 
-**Veneer note:** The wood veneer absorbs green wavelengths more heavily than red, blue, or yellow. Animations must avoid relying on green as a primary colour.
+**Veneer note:** From testing, colours rank approximately as follows through the wood veneer, best to worst: red, orange, white, pink > green > yellow > blue. Blue is the poorest performer — worse than green. Animations should use red, orange, white, and pink as primary colours for maximum visibility, and avoid blue and yellow as dominant colours.
 
 ---
 

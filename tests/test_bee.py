@@ -131,19 +131,19 @@ class BeeAnimationTest(unittest.TestCase):
         result = bee_module.play(self.su, self.graphics)
         self.assertIsNone(result)
 
-    # ── Cycle 7: yellow and black pixels ─────────────────────────────────────
+    # ── Cycle 7: orange and dark stripe pixels ───────────────────────────────
 
-    def test_yellow_and_dark_stripe_pixels_used(self):
-        """Body uses both yellow pixels (r>200, g>100, b<50) and dark stripe
-        pixels (all channels < 100) — confirming alternating horizontal stripes."""
+    def test_orange_and_dark_stripe_pixels_used(self):
+        """Body uses both orange pixels (r>200, g>50, b<50) and dark stripe
+        pixels (all channels < 100) — confirming alternating horizontal stripes.
+        Sky blue background (b>150, g>100, r<100) must not be miscounted."""
         bee_module.play(self.su, self.graphics)
-        non_black = [c.args for c in self.graphics.create_pen.call_args_list
-                     if c.args != (0, 0, 0)]
+        all_pens = [c.args for c in self.graphics.create_pen.call_args_list]
 
-        yellow = [(r,g,b) for r,g,b in non_black if r > 200 and g > 100 and b < 50]
-        dark   = [(r,g,b) for r,g,b in non_black if r < 100 and g < 100 and b < 100]
+        orange = [(r,g,b) for r,g,b in all_pens if r > 200 and g > 50 and b < 50]
+        dark   = [(r,g,b) for r,g,b in all_pens if r < 100 and g < 100 and b < 100]
 
-        self.assertGreater(len(yellow), 0, "No yellow stripe pixels found")
+        self.assertGreater(len(orange), 0, "No orange stripe pixels found")
         self.assertGreater(len(dark),   0, "No dark stripe pixels found")
 
     # ── Cycle 8: white wing pixels ────────────────────────────────────────────
@@ -151,9 +151,8 @@ class BeeAnimationTest(unittest.TestCase):
     def test_white_wing_pixels_used(self):
         """Wings are drawn in white (all channels > 200)."""
         bee_module.play(self.su, self.graphics)
-        non_black = [c.args for c in self.graphics.create_pen.call_args_list
-                     if c.args != (0, 0, 0)]
-        white = [(r,g,b) for r,g,b in non_black if r > 200 and g > 200 and b > 200]
+        all_pens = [c.args for c in self.graphics.create_pen.call_args_list]
+        white = [(r,g,b) for r,g,b in all_pens if r > 200 and g > 200 and b > 200]
         self.assertGreater(len(white), 0, "No white wing pixels found")
 
     # ── Cycle 9: vertical oscillation range ──────────────────────────────────
