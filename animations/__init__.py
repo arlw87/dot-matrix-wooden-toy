@@ -9,9 +9,9 @@ ANIMATIONS = {
     'heart':     heart,
     'star':      star,
     'rocket':    rocket,
-    'butterfly': butterfly,
+    'butterfly': green_test,   # pink button → green/blue colour test
     'boat':      boat,
-    'black':     green_test,
+    'black':     butterfly,    # black button → butterfly animation
 }
 
 

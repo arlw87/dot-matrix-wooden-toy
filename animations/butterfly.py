@@ -107,10 +107,6 @@ def play(su, graphics, check_interrupt=None):
 
     cx, cy = 8, 8
 
-    # Track the last rendered state so the hold frame matches exactly
-    last_wing_angle = 0.0
-    last_cy = float(cy)
-
     # ── Animation phase ───────────────────────────────────────────────────────
     while time.ticks_diff(time.ticks_ms(), start_time) < animation_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
@@ -122,15 +118,12 @@ def play(su, graphics, check_interrupt=None):
         wing_angle = t * flap_speed * math.pi
         bob        = math.sin(t * 2) * 0.5
 
-        last_wing_angle = wing_angle
-        last_cy = cy + bob
-
         _render(graphics, su, cx, cy + bob, wing_angle)
         time.sleep_ms(33)
 
-    # ── Hold phase — freeze on the exact last animation frame ─────────────────
+    # ── Hold phase — always settle on wings fully spread ──────────────────────
     sound.stop(su)
-    _render(graphics, su, cx, last_cy, last_wing_angle)
+    _render(graphics, su, cx, float(cy), math.pi / 2)
 
     hold_start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), hold_start) < 5000:
