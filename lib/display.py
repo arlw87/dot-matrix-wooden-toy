@@ -17,8 +17,8 @@ def fill(graphics, su, r, g, b):
 
 
 def pixel(graphics, x, y):
-    """Draw a pixel at (x, y) with 90° anti-clockwise rotation applied."""
-    graphics.pixel(int(y), 15 - int(x))
+    """Draw a pixel at logical (x, y) — x=0 bottom, x=15 top, y=0 left, y=15 right."""
+    graphics.pixel(15 - int(x), 15 - int(y))
 
 
 def set_pixel(graphics, x, y, r, g, b):

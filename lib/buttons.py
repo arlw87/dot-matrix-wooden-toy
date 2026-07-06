@@ -3,7 +3,7 @@ Button input for 6 push-to-make buttons wired to MCP23017 port B.
 
 Pin mapping (active-low, internal pull-ups enabled):
   GPB0 → rocket     (green button)
-  GPB1 → boot       (blue button)
+  GPB1 → boat       (blue button)
   GPB2 → heart      (red button)
   GPB3 → butterfly  (pink button)
   GPB4 → (unassigned — black button)
@@ -24,14 +24,14 @@ _REG_GPIOB    = 0x13   # port B GPIO read register
 # Button name → port B bit number
 BUTTON_BITS = {
     'rocket':    0,
-    'boot':      1,
+    'boat':      1,
     'heart':     2,
     'butterfly': 3,
     'star':      5,
 }
 
 # Priority order for simultaneous presses
-BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boot']
+BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boat']
 
 DEBOUNCE_MS = 50
 

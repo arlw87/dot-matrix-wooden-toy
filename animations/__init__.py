@@ -2,7 +2,7 @@
 Animation registry - maps button names to animation modules.
 """
 
-from animations import boot, heart, star, rocket, butterfly, colour_test
+from animations import boot, heart, star, rocket, butterfly, boat
 
 # Map button names to animation modules
 ANIMATIONS = {
@@ -10,7 +10,7 @@ ANIMATIONS = {
     'star':      star,
     'rocket':    rocket,
     'butterfly': butterfly,
-    'boot':      colour_test,
+    'boat':      boat,
 }
 
 

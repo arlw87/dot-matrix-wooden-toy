@@ -154,7 +154,7 @@ def play(su, graphics, check_interrupt=None):
         pixels = get_butterfly_pixels(cx, cy + bob, wing_angle)
         for x, y, r, g, b in pixels:
             graphics.set_pen(graphics.create_pen(r, g, b))
-            display.pixel(graphics, int(x), int(y))
+            display.pixel(graphics, 15 - int(y), int(x))
 
         su.update(graphics)
         time.sleep_ms(33)  # ~30 fps
@@ -167,7 +167,7 @@ def play(su, graphics, check_interrupt=None):
     pixels = get_butterfly_pixels(cx, cy, math.pi / 2)
     for x, y, r, g, b in pixels:
         graphics.set_pen(graphics.create_pen(r, g, b))
-        display.pixel(graphics, int(x), int(y))
+        display.pixel(graphics, 15 - int(y), int(x))
 
     su.update(graphics)
 
