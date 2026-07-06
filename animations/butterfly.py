@@ -1,6 +1,6 @@
 """
-Butterfly animation - colorful butterfly with flapping wings.
-Plays for ~5 seconds with heartbeat sound, then holds final frame for 5 seconds.
+Butterfly animation - colourful butterfly with flapping wings.
+Plays for ~5 seconds then holds the final frame for 5 seconds.
 """
 
 import time
@@ -10,128 +10,108 @@ from lib import display, sound
 
 SOUND_FILE = "sounds/heartbeat.wav"
 
+# Body and antennae — pink so they stand out
+_BODY     = (255,  80, 160)
+_ANTENNA  = (255,  80, 160)
+_SPOT     = (255, 255, 255)
 
-def get_butterfly_pixels(cx, cy, wing_angle, size=5):
+# Wing colours, warm→cool from body outward
+_WING = [
+    (255,  50, 150),  # pink  (nearest to body)
+    (255, 100,  50),  # orange
+    (255, 255,   0),  # yellow
+    (100, 200, 255),  # light blue
+    (200, 100, 255),  # purple
+]
+
+
+def _draw(pixels, x, y, colour):
+    """Append a pixel only if it's within the 16×16 grid."""
+    if 0 <= x < 16 and 0 <= y < 16:
+        pixels.append((x, y, colour[0], colour[1], colour[2]))
+
+
+def get_butterfly_pixels(cx, cy, wing_angle):
     """
-    Generate butterfly pixels with wings at given angle.
-
-    Args:
-        cx, cy: Center of butterfly body
-        wing_angle: Angle of wings (0 = flat, higher = more raised)
-        size: Size multiplier
-
-    Returns:
-        List of (x, y, r, g, b) tuples for colored pixels
+    Return a list of (x, y, r, g, b) tuples for the butterfly.
+    cx/cy are the body centre (float-safe); wing_angle drives the flap.
+    In butterfly coords: x = column (left=0), y = row (top=0 after display mapping).
     """
     pixels = []
-
-    # Wing colors - bright and colorful
-    colors = [
-        (255, 50, 150),   # Pink
-        (255, 100, 50),   # Orange
-        (255, 255, 0),    # Yellow
-        (100, 200, 255),  # Light blue
-        (200, 100, 255),  # Purple
-    ]
-
-    # Body (dark brown/black)
-    body_color = (40, 20, 10)
-
-    # Draw body (vertical line in center)
-    for dy in range(-3, 4):
-        y = int(cy + dy)
-        if 0 <= y < 16:
-            pixels.append((int(cx), y, body_color[0], body_color[1], body_color[2]))
-
-    # Wing spread based on angle (0.3 to 1.0)
     spread = 0.5 + 0.5 * math.sin(wing_angle)
 
-    # Upper wings (larger)
-    upper_wing_width = int(4 * spread) + 2
-    upper_wing_height = 4
+    # ── Body (8 pixels tall, centred at cy) ──────────────────────────────────
+    for dy in range(-4, 4):
+        _draw(pixels, int(cx), int(cy + dy), _BODY)
 
-    for side in [-1, 1]:  # Left and right
-        for wy in range(upper_wing_height):
-            # Wing gets narrower towards top
-            row_width = upper_wing_width - wy // 2
-            for wx in range(1, row_width + 1):
+    # ── Upper wings — wider than before to fill the screen width ─────────────
+    upper_width  = int(6 * spread) + 2   # 2–8 columns from body at spread 0→1
+    upper_height = 5
+
+    for side in (-1, 1):
+        for wy in range(upper_height):
+            row_w = max(1, upper_width - wy // 2)
+            for wx in range(1, row_w + 1):
                 x = int(cx + side * wx)
-                y = int(cy - 2 + wy - int(spread * 2))
-                if 0 <= x < 16 and 0 <= y < 16:
-                    # Color based on distance from body
-                    color_idx = min(wx - 1, len(colors) - 1)
-                    c = colors[color_idx]
-                    pixels.append((x, y, c[0], c[1], c[2]))
+                y = int(cy - 3 + wy - int(spread * 2))
+                _draw(pixels, x, y, _WING[min(wx - 1, len(_WING) - 1)])
 
-    # Lower wings (smaller, rounder)
-    lower_wing_width = int(3 * spread) + 1
-    lower_wing_height = 3
+    # ── Lower wings ───────────────────────────────────────────────────────────
+    lower_width  = int(4 * spread) + 1   # 1–5 columns from body
+    lower_height = 4
 
-    for side in [-1, 1]:
-        for wy in range(lower_wing_height):
-            row_width = lower_wing_width - abs(wy - 1)
-            for wx in range(1, row_width + 1):
+    for side in (-1, 1):
+        for wy in range(lower_height):
+            row_w = max(1, lower_width - abs(wy - 1))
+            for wx in range(1, row_w + 1):
                 x = int(cx + side * wx)
                 y = int(cy + 1 + wy)
-                if 0 <= x < 16 and 0 <= y < 16:
-                    color_idx = min(wx - 1, len(colors) - 1)
-                    # Slightly different colors for lower wings
-                    c = colors[(color_idx + 2) % len(colors)]
-                    pixels.append((x, y, c[0], c[1], c[2]))
+                _draw(pixels, x, y, _WING[(min(wx - 1, len(_WING) - 1) + 2) % len(_WING)])
 
-    # Wing spots (decorative dots)
-    spot_color = (255, 255, 255)  # White spots
-    for side in [-1, 1]:
-        # Upper wing spot
-        spot_x = int(cx + side * int(2 * spread + 1))
-        spot_y = int(cy - 1 - int(spread))
-        if 0 <= spot_x < 16 and 0 <= spot_y < 16:
-            pixels.append((spot_x, spot_y, spot_color[0], spot_color[1], spot_color[2]))
-        # Lower wing spot
-        spot_x = int(cx + side * int(1.5 * spread + 1))
-        spot_y = int(cy + 2)
-        if 0 <= spot_x < 16 and 0 <= spot_y < 16:
-            pixels.append((spot_x, spot_y, spot_color[0], spot_color[1], spot_color[2]))
+    # ── White wing spots ──────────────────────────────────────────────────────
+    for side in (-1, 1):
+        _draw(pixels, int(cx + side * max(1, int(3 * spread + 1))),
+              int(cy - 1 - int(spread)), _SPOT)
+        _draw(pixels, int(cx + side * max(1, int(2 * spread + 1))),
+              int(cy + 2), _SPOT)
 
-    # Antennae
-    antenna_color = (60, 30, 15)
-    for side in [-1, 1]:
-        ax = int(cx + side)
-        ay = int(cy - 4)
-        if 0 <= ax < 16 and 0 <= ay < 16:
-            pixels.append((ax, ay, antenna_color[0], antenna_color[1], antenna_color[2]))
+    # ── Antennae — pink, 3 pixels each, diagonal outward from head ────────────
+    for side in (-1, 1):
+        for step in range(3):
+            _draw(pixels, int(cx + side * (step + 1)), int(cy - 4 - step), _ANTENNA)
 
     return pixels
+
+
+def _render(graphics, su, cx, cy, wing_angle):
+    """Clear display and draw the butterfly at the given state."""
+    graphics.set_pen(graphics.create_pen(0, 0, 0))
+    graphics.clear()
+    for x, y, r, g, b in get_butterfly_pixels(cx, cy, wing_angle):
+        graphics.set_pen(graphics.create_pen(r, g, b))
+        display.pixel(graphics, 15 - y, x)
+    su.update(graphics)
 
 
 def play(su, graphics, check_interrupt=None):
     """
     Play the butterfly flapping animation.
-
-    Args:
-        su: Stellar Unicorn instance
-        graphics: PicoGraphics instance
-        check_interrupt: Optional callback that returns button name if pressed
-
-    Returns:
-        None if completed normally, button name (str) if interrupted
+    Returns None if completed normally, or the button name (str) if interrupted.
     """
-    # Random color variation
-    color_shift = random.randint(0, 4)
-
-    # Flap speed variation
     flap_speed = 4.0 + random.uniform(-0.5, 0.5)
 
-    # Start sound
     sound.play(su, SOUND_FILE)
 
-    # Animation phase (5 seconds)
     start_time = time.ticks_ms()
     animation_duration_ms = 5000
 
-    # Butterfly position - centered
     cx, cy = 8, 8
 
+    # Track the last rendered state so the hold frame matches exactly
+    last_wing_angle = 0.0
+    last_cy = float(cy)
+
+    # ── Animation phase ───────────────────────────────────────────────────────
     while time.ticks_diff(time.ticks_ms(), start_time) < animation_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
         if interrupted_by:
@@ -139,45 +119,24 @@ def play(su, graphics, check_interrupt=None):
             return interrupted_by
 
         t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
-
-        # Wing flapping angle
         wing_angle = t * flap_speed * math.pi
+        bob        = math.sin(t * 2) * 0.5
 
-        # Slight vertical bobbing
-        bob = math.sin(t * 2) * 0.5
+        last_wing_angle = wing_angle
+        last_cy = cy + bob
 
-        # Clear display
-        graphics.set_pen(graphics.create_pen(0, 0, 0))
-        graphics.clear()
+        _render(graphics, su, cx, cy + bob, wing_angle)
+        time.sleep_ms(33)
 
-        # Get and draw butterfly pixels
-        pixels = get_butterfly_pixels(cx, cy + bob, wing_angle)
-        for x, y, r, g, b in pixels:
-            graphics.set_pen(graphics.create_pen(r, g, b))
-            display.pixel(graphics, 15 - int(y), int(x))
-
-        su.update(graphics)
-        time.sleep_ms(33)  # ~30 fps
-
-    # Hold phase (5 seconds) - wings spread
-    graphics.set_pen(graphics.create_pen(0, 0, 0))
-    graphics.clear()
-
-    # Draw butterfly with wings spread (angle = pi/2 for max spread)
-    pixels = get_butterfly_pixels(cx, cy, math.pi / 2)
-    for x, y, r, g, b in pixels:
-        graphics.set_pen(graphics.create_pen(r, g, b))
-        display.pixel(graphics, 15 - int(y), int(x))
-
-    su.update(graphics)
+    # ── Hold phase — freeze on the exact last animation frame ─────────────────
+    sound.stop(su)
+    _render(graphics, su, cx, last_cy, last_wing_angle)
 
     hold_start = time.ticks_ms()
-    hold_duration_ms = 5000
-
-    while time.ticks_diff(time.ticks_ms(), hold_start) < hold_duration_ms:
+    while time.ticks_diff(time.ticks_ms(), hold_start) < 5000:
         interrupted_by = check_interrupt() if check_interrupt else None
         if interrupted_by:
             return interrupted_by
         time.sleep_ms(50)
 
-    return None  # Completed normally
+    return None

@@ -214,9 +214,9 @@ class BoatAnimationTest(unittest.TestCase):
             boat_module.play(self.su, self.graphics)
 
         self.assertGreaterEqual(len(frames), 2, msg="Expected at least 2 frames")
-        # Exclude water rows (x=0, x=1) which always span the full width
-        first_max_y = max(y for x, y in frames[0]  if x >= 2)
-        last_max_y  = max(y for x, y in frames[-1] if x >= 2)
+        # Exclude water rows (x=0, x=1, x=2) which always span the full width
+        first_max_y = max(y for x, y in frames[0]  if x >= 3)
+        last_max_y  = max(y for x, y in frames[-1] if x >= 3)
         self.assertGreater(last_max_y, first_max_y,
             msg=f"Boat should drift right: first frame max_y={first_max_y}, "
                 f"last frame max_y={last_max_y}")

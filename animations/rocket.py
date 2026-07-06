@@ -114,8 +114,11 @@ def play(su, graphics, check_interrupt=None):
 
     start_time = time.ticks_ms()
     animation_duration_ms = 5000
+    hold_duration_ms = 5000
     frame = 0
 
+    # ── Phase 1: launch — rocket rises until nose hits the top row, then
+    #            stays there with flames still flickering for the remainder ───
     while time.ticks_diff(time.ticks_ms(), start_time) < animation_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
         if interrupted_by:
@@ -124,11 +127,11 @@ def play(su, graphics, check_interrupt=None):
             return interrupted_by
 
         t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
-        progress = (t / 5.0) ** 1.5   # ease-in: accelerates upward
-        rx = int(_START_RX + (_END_RX - _START_RX) * progress)
+        progress = (t / 5.0) ** 1.5       # ease-in: accelerates upward
+        rx = min(15, int(_START_RX + (_END_RX - _START_RX) * progress))
 
         frame += 1
-        flame_len = (frame % 3) + 2  # cycles 2 → 3 → 4
+        flame_len = (frame % 3) + 2       # cycles 2 → 3 → 4
         flame_seed = frame % 2
 
         graphics.set_pen(graphics.create_pen(0, 0, 0))
@@ -137,14 +140,16 @@ def play(su, graphics, check_interrupt=None):
         su.update(graphics)
         time.sleep_ms(33)
 
-    # Hold phase — rocket off screen, blank display
+    # ── Phase 2: hold — rocket parked at top, flames frozen, 5 seconds ──────
+    if _sound_started:
+        sound.stop(su)
+
     graphics.set_pen(graphics.create_pen(0, 0, 0))
     graphics.clear()
+    _draw_rocket(graphics, 15, 3, 0)
     su.update(graphics)
 
     hold_start = time.ticks_ms()
-    hold_duration_ms = 5000
-
     while time.ticks_diff(time.ticks_ms(), hold_start) < hold_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
         if interrupted_by:

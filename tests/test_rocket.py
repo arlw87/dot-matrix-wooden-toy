@@ -125,14 +125,21 @@ class RocketAnimationTest(unittest.TestCase):
         rocket_module.play(self.su, self.graphics, check_interrupt=lambda: "flower")
         self.mock_sound.stop.assert_called_once_with(self.su)
 
-    def test_sound_not_stopped_on_hold_interrupt(self):
-        """sound.stop is NOT called when interrupted during the Hold Phase."""
+    def test_sound_stops_when_rocket_parks(self):
+        """sound.stop is called exactly once when the rocket parks at the top
+        (at the animation→hold transition), whether or not the hold is later
+        interrupted."""
         calls = [0]
         def check():
             calls[0] += 1
             return "butterfly" if calls[0] > 10 else None
         rocket_module.play(self.su, self.graphics, check_interrupt=check)
-        self.mock_sound.stop.assert_not_called()
+        self.mock_sound.stop.assert_called_once_with(self.su)
+
+    def test_sound_stops_on_completion(self):
+        """sound.stop is called exactly once when the animation completes normally."""
+        rocket_module.play(self.su, self.graphics)
+        self.mock_sound.stop.assert_called_once_with(self.su)
 
     # ── Cycle 6: graceful handling of missing sound file ─────────────────────
 

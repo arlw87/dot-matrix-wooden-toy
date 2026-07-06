@@ -8,8 +8,9 @@ Display coordinate convention (matches rocket.py):
 
 Boat layout at base position (drift=0, bob=0):
   Water surface  x=1, y=0-15  (animated shimmer)
+  Water mid      x=2, y=0-15  (shimmers between surface and depth colours)
   Water depth    x=0, y=0-15
-  Keel           x=2, y=3-12
+  Keel           x=2, y=3-12  (overdraws water mid)
   Hull           x=3, y=2-13
   Hull           x=4, y=1-14
   Deck           x=5, y=2-13
@@ -46,12 +47,16 @@ def _px(graphics, x, y, colour):
 
 
 def _draw_water(graphics, phase):
-    """Two rows of blue water with a travelling sine-wave shimmer."""
+    """Three rows of water with a travelling sine-wave shimmer."""
     for y in range(16):
         wave = 0.5 + 0.5 * math.sin(y * 1.2 + phase)
-        # shimmer on blue only — green is already at 255, red stays at 0
-        b = int(_W_SURF[2] + wave * 30)  # 200–230
-        _px(graphics, 1, y, (_W_SURF[0], _W_SURF[1], b))
+        # surface (x=1): near-cyan, shimmer on blue channel
+        b_surf = int(_W_SURF[2] + wave * 30)  # 200–230
+        _px(graphics, 1, y, (_W_SURF[0], _W_SURF[1], b_surf))
+        # mid (x=2): shimmers between _W_DEEP and _W_SURF by blending g and b
+        g_mid = int(_W_DEEP[1] + wave * (_W_SURF[1] - _W_DEEP[1]))  # 200–255
+        b_mid = int(_W_DEEP[2] + wave * (_W_SURF[2] - _W_DEEP[2]))  # 255–200
+        _px(graphics, 2, y, (0, g_mid, b_mid))
         _px(graphics, 0, y, _W_DEEP)
 
 
