@@ -8,7 +8,7 @@ import math
 import random
 from lib import display, sound
 
-SOUND_FILE = "sounds/heartbeat.wav"
+SOUND_FILE = "sounds/butterfly.wav"
 
 # Body and antennae — pink so they stand out
 _BODY     = (255,  80, 160)
@@ -31,21 +31,23 @@ def _draw(pixels, x, y, colour):
         pixels.append((x, y, colour[0], colour[1], colour[2]))
 
 
-def get_butterfly_pixels(cx, cy, wing_angle):
+def get_butterfly_pixels(cx, cy, wing_angle, spread=None):
     """
     Return a list of (x, y, r, g, b) tuples for the butterfly.
     cx/cy are the body centre (float-safe); wing_angle drives the flap.
+    spread (0.0–1.0) overrides the angle-derived spread when provided.
     In butterfly coords: x = column (left=0), y = row (top=0 after display mapping).
     """
     pixels = []
-    spread = 0.5 + 0.5 * math.sin(wing_angle)
+    if spread is None:
+        spread = 0.5 + 0.5 * math.sin(wing_angle)
 
     # ── Body (8 pixels tall, centred at cy) ──────────────────────────────────
     for dy in range(-4, 4):
         _draw(pixels, int(cx), int(cy + dy), _BODY)
 
     # ── Upper wings — wider than before to fill the screen width ─────────────
-    upper_width  = int(6 * spread) + 2   # 2–8 columns from body at spread 0→1
+    upper_width  = min(7, int(6 * spread) + 2)   # 2–7 columns from body at spread 0→1
     upper_height = 5
 
     for side in (-1, 1):
@@ -53,7 +55,7 @@ def get_butterfly_pixels(cx, cy, wing_angle):
             row_w = max(1, upper_width - wy // 2)
             for wx in range(1, row_w + 1):
                 x = int(cx + side * wx)
-                y = int(cy - 3 + wy - int(spread * 2))
+                y = int(cy - 3 + wy)
                 _draw(pixels, x, y, _WING[min(wx - 1, len(_WING) - 1)])
 
     # ── Lower wings ───────────────────────────────────────────────────────────
@@ -71,7 +73,7 @@ def get_butterfly_pixels(cx, cy, wing_angle):
     # ── White wing spots ──────────────────────────────────────────────────────
     for side in (-1, 1):
         _draw(pixels, int(cx + side * max(1, int(3 * spread + 1))),
-              int(cy - 1 - int(spread)), _SPOT)
+              int(cy - 1), _SPOT)
         _draw(pixels, int(cx + side * max(1, int(2 * spread + 1))),
               int(cy + 2), _SPOT)
 
@@ -83,11 +85,11 @@ def get_butterfly_pixels(cx, cy, wing_angle):
     return pixels
 
 
-def _render(graphics, su, cx, cy, wing_angle):
+def _render(graphics, su, cx, cy, wing_angle, spread=None):
     """Clear display and draw the butterfly at the given state."""
     graphics.set_pen(graphics.create_pen(0, 0, 0))
     graphics.clear()
-    for x, y, r, g, b in get_butterfly_pixels(cx, cy, wing_angle):
+    for x, y, r, g, b in get_butterfly_pixels(cx, cy, wing_angle, spread):
         graphics.set_pen(graphics.create_pen(r, g, b))
         display.pixel(graphics, 15 - y, x)
     su.update(graphics)
@@ -107,6 +109,9 @@ def play(su, graphics, check_interrupt=None):
 
     cx, cy = 8, 8
 
+    _SETTLE_START = 4.5   # seconds into animation when wings begin settling
+    _FULL_SPREAD  = 1.0   # target spread for hold frame
+
     # ── Animation phase ───────────────────────────────────────────────────────
     while time.ticks_diff(time.ticks_ms(), start_time) < animation_duration_ms:
         interrupted_by = check_interrupt() if check_interrupt else None
@@ -114,16 +119,26 @@ def play(su, graphics, check_interrupt=None):
             sound.stop(su)
             return interrupted_by
 
-        t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
+        t          = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
         wing_angle = t * flap_speed * math.pi
         bob        = math.sin(t * 2) * 0.5
 
-        _render(graphics, su, cx, cy + bob, wing_angle)
+        # In the last 0.5 s ease spread → 1.0 and bob → 0 so the final
+        # animation frame is identical to the hold frame.
+        if t >= _SETTLE_START:
+            ease       = min(1.0, (t - _SETTLE_START) / 0.5)
+            spread     = (0.5 + 0.5 * math.sin(wing_angle)) * (1.0 - ease) + _FULL_SPREAD * ease
+            settled_cy = (cy + bob) * (1.0 - ease) + float(cy) * ease
+        else:
+            spread     = None
+            settled_cy = cy + bob
+
+        _render(graphics, su, cx, settled_cy, wing_angle, spread)
         time.sleep_ms(33)
 
-    # ── Hold phase — always settle on wings fully spread ──────────────────────
+    # ── Hold phase — wings fully spread (matches final animation frame) ───────
     sound.stop(su)
-    _render(graphics, su, cx, float(cy), math.pi / 2)
+    _render(graphics, su, cx, float(cy), 0.0, _FULL_SPREAD)
 
     hold_start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), hold_start) < 5000:
