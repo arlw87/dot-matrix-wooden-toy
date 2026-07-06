@@ -41,6 +41,15 @@ The target animation colour column is to be filled in as each animation's palett
 
 **Veneer note:** From testing, colours rank approximately as follows through the wood veneer, best to worst: red, orange, white, pink > green > yellow > blue. Blue is the poorest performer — worse than green. Animations should use red, orange, white, and pink as primary colours for maximum visibility, and avoid blue and yellow as dominant colours.
 
+**Confirmed good colours (green/blue-green range, tested on hardware):**
+The following colours from the green/greeny-blue test displayed well on the physical hardware and are approved for use in animations:
+- **Green** `(0, 255, 0)` — pure green, strong
+- **Green-Mint** `(0, 255, 64)` — green with very slight blue, strong
+- **Near-Cyan** `(0, 255, 200)` — green-leaning cyan, good
+- **Yel-Lime** `(200, 255, 0)` — yellow-lime, good
+- **Cyan** `(0, 255, 255)` — full cyan, good
+- **Aqua** `(0, 200, 255)` — use this in place of plain blue; far more visible than `(0, 0, 255)`
+
 ---
 
 ## 3. Feature List

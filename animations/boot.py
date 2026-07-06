@@ -10,7 +10,7 @@ from lib import display, sound
 SOUND_FILE = "sounds/startup.wav"
 
 
-def play(su, graphics, check_interrupt=None):
+def play(su, graphics, check_interrupt=None, hold_ms=0):
     """
     Play the boot splash animation.
 
@@ -68,8 +68,17 @@ def play(su, graphics, check_interrupt=None):
     # Brief pause on final frame
     time.sleep_ms(200)
 
-    # Clear display
-    display.clear(graphics, su)
+    if hold_ms > 0:
+        # Hold the final frame for the requested duration
+        hold_start = time.ticks_ms()
+        while time.ticks_diff(time.ticks_ms(), hold_start) < hold_ms:
+            interrupted_by = check_interrupt() if check_interrupt else None
+            if interrupted_by:
+                sound.stop(su)
+                return interrupted_by
+            time.sleep_ms(50)
+    else:
+        display.clear(graphics, su)
 
     return None  # Completed normally
 

@@ -35,8 +35,8 @@ _HULL_B = (140,  35,   8)   # dark orange lower hull / keel
 _CABIN  = (245, 245, 245)   # white wheelhouse
 _WINDOW = ( 30,  50,  90)   # dark blue windows
 _DETAIL = (220, 180,  90)   # gold antenna
-_W_SURF = ( 30,  90, 200)   # water surface (x=1)
-_W_DEEP = ( 10,  45, 130)   # water depth   (x=0)
+_W_SURF = (  0, 255, 200)   # near-cyan water surface (x=1)
+_W_DEEP = (  0, 200, 255)   # aqua water depth        (x=0)
 
 
 def _px(graphics, x, y, colour):
@@ -49,10 +49,9 @@ def _draw_water(graphics, phase):
     """Two rows of blue water with a travelling sine-wave shimmer."""
     for y in range(16):
         wave = 0.5 + 0.5 * math.sin(y * 1.2 + phase)
-        r = int(_W_SURF[0] + wave * 20)
-        g = int(_W_SURF[1] + wave * 15)
-        b = int(_W_SURF[2] + wave * 15)
-        _px(graphics, 1, y, (r, g, b))
+        # shimmer on blue only — green is already at 255, red stays at 0
+        b = int(_W_SURF[2] + wave * 30)  # 200–230
+        _px(graphics, 1, y, (_W_SURF[0], _W_SURF[1], b))
         _px(graphics, 0, y, _W_DEEP)
 
 

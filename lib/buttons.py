@@ -27,11 +27,12 @@ BUTTON_BITS = {
     'boat':      1,
     'heart':     2,
     'butterfly': 3,
+    'black':     4,
     'star':      5,
 }
 
 # Priority order for simultaneous presses
-BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boat']
+BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boat', 'black']
 
 DEBOUNCE_MS = 50
 

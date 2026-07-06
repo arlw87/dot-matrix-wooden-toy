@@ -13,7 +13,7 @@ Rocket layout relative to nose position rx (centred at y = 7–8):
   Window     — 2 × 2 in centre of body                (magnolia)
   Fins row 1 — (rx-7): y=3,4 + y=5–10 + y=11,12      (red + green + red, 10 wide)
   Fins row 2 — (rx-8): y=2,3,4 + y=5–10 + y=11,12,13 (red + green + red, 12 wide)
-  Flame      — 1–3 rows below fins                    (orange → yellow)
+  Flame      — 1–4 rows below fins                    (orange → yellow → pale yellow)
 """
 
 import time
@@ -22,12 +22,13 @@ from lib import display, sound
 SOUND_FILE = "sounds/rocket.wav"
 
 # ── colours ───────────────────────────────────────────────────────────────────
-_BODY = (30,  155,  50)    # green body
+_BODY = (0,   255,  64)    # green-mint body
 _NOSE = (210,  30,  20)    # red nose cone + fins
 _WIN  = (240, 240, 215)    # magnolia window
 _FL_O = (220,  85,  10)    # deep orange (closest to nozzle)
 _FL_M = (255, 145,  20)    # orange mid
 _FL_H = (255, 210,  40)    # yellow hot tip
+_FL_X = (255, 245, 120)    # pale yellow extreme tip
 
 # ── travel range ──────────────────────────────────────────────────────────────
 _START_RX = 7    # nose x at launch — body enters from bottom edge
@@ -93,6 +94,11 @@ def _draw_rocket(graphics, rx, flame_len, flame_seed):
         for y in (7, 8):
             _px(graphics, rx - 11, y, *_FL_H)
 
+    # Flame extreme tip
+    if flame_len >= 4:
+        for y in (7, 8):
+            _px(graphics, rx - 12, y, *_FL_X)
+
 
 def play(su, graphics, check_interrupt=None):
     """
@@ -122,7 +128,7 @@ def play(su, graphics, check_interrupt=None):
         rx = int(_START_RX + (_END_RX - _START_RX) * progress)
 
         frame += 1
-        flame_len = 3 if frame % 3 == 0 else 2
+        flame_len = (frame % 3) + 2  # cycles 2 → 3 → 4
         flame_seed = frame % 2
 
         graphics.set_pen(graphics.create_pen(0, 0, 0))
