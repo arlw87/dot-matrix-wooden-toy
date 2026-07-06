@@ -79,7 +79,7 @@ def play(su, filename):
     WAV files should be pre-converted to match hardware expectations.
     """
     audio_data, sample_rate = load_wav(filename)
-    su.play_sample(audio_data, rate=sample_rate)
+    su.play_sample(audio_data)
 
 
 def stop(su):

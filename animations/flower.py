@@ -1,6 +1,8 @@
 """
-Flower animation - a gold centre circle appears, then warm-pink petals
-grow outward from its edge. Same every play, no variation.
+Flower animation — 8 pink petals bloom outward from a yellow centre.
+Uses V2 radial-oval geometry: each petal is an ellipse whose centre sits
+at distance PR_MAX from the display centre.  Outer pixels of each petal
+are drawn in a pale-pink tip colour, inner pixels in hot pink.
 """
 
 import time
@@ -9,68 +11,82 @@ from lib import display, sound
 
 SOUND_FILE = "sounds/flower.wav"
 
-_CX, _CY       = 7.5, 7.5
-_CIRCLE_R      = 2.0   # radius of centre circle
-_PETAL_A_MAX   = 2.5   # petal semi-major axis (length from ellipse centre to tip)
-_PETAL_B_MAX   = 1.5   # petal semi-minor axis (half-width at full size)
-_NUM_PETALS    = 8
+_CX, _CY = 7.5, 7.5
 
-_CENTER_COLOR  = (255, 210, 50)   # warm gold
-_PETAL_COLOR   = (255, 80, 130)   # warm pink
+# Palette — warm pink only, no green
+_PETAL_COLOR = (255,  90, 150)   # hot pink
+_PETAL_TIP   = (255, 180, 205)   # pale pink tip (outer third of each petal)
+_CENTER_COLOR = (255, 215,  40)  # yellow centre
+_RING_COLOR   = (240, 150,  30)  # amber ring around centre
 
+_NUM_PETALS = 8
 
-def _draw_filled_circle(graphics, cx, cy, radius):
-    """Draw a filled circle using the current pen."""
-    r2 = radius * radius
-    for y in range(int(cy - radius) - 1, int(cy + radius) + 2):
-        for x in range(int(cx - radius) - 1, int(cx + radius) + 2):
-            if (x - cx) ** 2 + (y - cy) ** 2 <= r2:
-                if 0 <= x < 16 and 0 <= y < 16:
-                    display.pixel(graphics, x, y)
+# Full-bloom geometry (matches generate_flower_bloom.py V2)
+_PR_MAX     = 4.4   # distance from display centre to each petal's oval centre
+_MAJOR_MAX  = 2.7   # petal half-length along radial axis
+_MINOR_MAX  = 1.25  # petal half-width along tangential axis
+_CENTER_MAX = 2.5   # radius of centre disc at full bloom
 
 
-def _draw_petal(graphics, angle, semi_major):
-    """Draw one elliptical petal anchored at the centre circle edge."""
-    dx_u =  math.cos(angle)
-    dy_u =  math.sin(angle)
-    px_u = -dy_u              # perpendicular unit vector
-    py_u =  dx_u
+def _draw_petal(graphics, angle, pr, major, minor):
+    """Draw one radial oval petal. Tip pixels drawn in pale colour."""
+    ca, sa = math.cos(angle), math.sin(angle)
+    pcx, pcy = _CX + pr * ca, _CY + pr * sa
 
-    # Ellipse centre sits so the near end always touches the circle edge
-    pcx = _CX + (_CIRCLE_R + semi_major) * dx_u
-    pcy = _CY + (_CIRCLE_R + semi_major) * dy_u
+    search = major + 1
+    y0 = int(pcy - search) - 1
+    y1 = int(pcy + search) + 2
+    x0 = int(pcx - search) - 1
+    x1 = int(pcx + search) + 2
 
-    a = semi_major
-    b = min(_PETAL_B_MAX, semi_major * 0.7)  # width grows with length
-
-    search = a + 1
-    y0, y1 = int(pcy - search) - 1, int(pcy + search) + 2
-    x0, x1 = int(pcx - search) - 1, int(pcx + search) + 2
     for y in range(y0, y1):
         for x in range(x0, x1):
-            along = (x - pcx) * dx_u + (y - pcy) * dy_u
-            perp  = (x - pcx) * px_u + (y - pcy) * py_u
-            if (along / a) ** 2 + (perp / b) ** 2 <= 1.0:
-                if 0 <= x < 16 and 0 <= y < 16:
-                    display.pixel(graphics, x, y)
+            if not (0 <= x < 16 and 0 <= y < 16):
+                continue
+            along = (x - pcx) * ca  + (y - pcy) * sa
+            perp  = (x - pcx) * (-sa) + (y - pcy) * ca
+            if (along / major) ** 2 + (perp / minor) ** 2 <= 1.0:
+                dist = math.hypot(x - _CX, y - _CY)
+                colour = _PETAL_TIP if dist > pr + 0.4 else _PETAL_COLOR
+                graphics.set_pen(graphics.create_pen(*colour))
+                display.pixel(graphics, x, y)
 
 
-def _draw_flower(graphics, circle_r, petal_a):
-    """Render the complete flower at the given growth state."""
+def _draw_centre(graphics, center_r):
+    """Draw the filled centre disc with an amber ring."""
+    r2 = center_r * center_r
+    inner_r2 = (center_r * 0.68) ** 2
+    for y in range(int(_CY - center_r) - 1, int(_CY + center_r) + 2):
+        for x in range(int(_CX - center_r) - 1, int(_CX + center_r) + 2):
+            if not (0 <= x < 16 and 0 <= y < 16):
+                continue
+            d2 = (x - _CX) ** 2 + (y - _CY) ** 2
+            if d2 <= r2:
+                colour = _CENTER_COLOR if d2 <= inner_r2 else _RING_COLOR
+                graphics.set_pen(graphics.create_pen(*colour))
+                display.pixel(graphics, x, y)
+
+
+def _draw_flower(graphics, pr, major, minor, center_r):
+    """Render one frame: petals first (behind), centre on top."""
     graphics.set_pen(graphics.create_pen(0, 0, 0))
     graphics.clear()
 
-    # Petals first (drawn behind centre)
-    if petal_a > 0:
-        graphics.set_pen(graphics.create_pen(*_PETAL_COLOR))
-        for i in range(_NUM_PETALS):
-            angle = (i / _NUM_PETALS) * 2 * math.pi
-            _draw_petal(graphics, angle, petal_a)
+    angle_step = 2 * math.pi / _NUM_PETALS
+    for i in range(_NUM_PETALS):
+        _draw_petal(graphics, i * angle_step, pr, major, minor)
 
-    # Centre circle on top
-    if circle_r > 0:
-        graphics.set_pen(graphics.create_pen(*_CENTER_COLOR))
-        _draw_filled_circle(graphics, _CX, _CY, circle_r)
+    _draw_centre(graphics, center_r)
+
+
+def _bloom_state(t):
+    """Return (pr, major, minor, center_r) for progress t in [0, 1], ease-out."""
+    ease     = 1.0 - (1.0 - t) * (1.0 - t)
+    pr       = 0.5  + (_PR_MAX    - 0.5)  * ease
+    major    = 1.0  + (_MAJOR_MAX - 1.0)  * ease
+    minor    = 0.8  + (_MINOR_MAX - 0.8)  * ease
+    center_r = 2.0  + (_CENTER_MAX - 2.0) * ease
+    return pr, major, minor, center_r
 
 
 def play(su, graphics, check_interrupt=None):
@@ -90,21 +106,14 @@ def play(su, graphics, check_interrupt=None):
             sound.stop(su)
             return interrupted_by
 
-        t = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
-        progress = t / 5.0  # 0.0 → 1.0 over 5 seconds
-
-        # Phase 1 (first 25%): centre circle grows in
-        circle_r = _CIRCLE_R * min(1.0, progress / 0.25)
-
-        # Phase 2 (remaining 75%): petals grow outward from circle edge
-        petal_a = _PETAL_A_MAX * max(0.0, (progress - 0.25) / 0.75)
-
-        _draw_flower(graphics, circle_r, petal_a)
+        t        = time.ticks_diff(time.ticks_ms(), start_time) / 1000.0
+        progress = t / 5.0
+        _draw_flower(graphics, *_bloom_state(progress))
         su.update(graphics)
         time.sleep_ms(33)
 
     # Hold phase — full bloom for 5 seconds
-    _draw_flower(graphics, _CIRCLE_R, _PETAL_A_MAX)
+    _draw_flower(graphics, *_bloom_state(1.0))
     su.update(graphics)
 
     hold_start = time.ticks_ms()

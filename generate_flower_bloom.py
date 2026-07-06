@@ -23,11 +23,11 @@ BG         = (0, 0, 0)
 LABEL_H    = 32
 TITLE_H    = 22
 
-# Flower V2 palette
-PETAL  = (255, 120,  25)
-TIP    = (225,  40,  45)
-CENTER = (255, 225,  60)
-RING   = (240, 150,  25)
+# Flower V2 palette — pink
+PETAL  = (255,  90, 150)   # hot pink
+TIP    = (255, 180, 205)   # pale pink tip
+CENTER = (255, 215,  40)   # yellow centre
+RING   = (240, 150,  30)   # amber ring
 
 # Full-bloom geometry (matches flower_v2)
 PR_MAX    = 4.4
@@ -125,7 +125,7 @@ def main():
         print(f'  saved frame_{i:02d}.png')
         frames.append((pixels, label))
 
-    comp = _composite(frames, 'Flower V2 bloom — 8 orange petals open outward from centre')
+    comp = _composite(frames, 'Flower V2 bloom — 8 pink petals open outward from centre')
     comp.save(os.path.join(out_dir, 'bloom_composite.png'))
     print('  saved bloom_composite.png')
     print('\nDone.')
