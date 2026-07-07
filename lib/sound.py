@@ -70,20 +70,69 @@ def load_wav(filename):
     raise ValueError("No data chunk found in WAV file")
 
 
+# ── Audio gate ────────────────────────────────────────────────────────────────
+# When the gate is armed, play() holds the requested sound back instead of
+# starting it. release_gate() then starts the held sound. This lets the app
+# defer an animation's audio while its trigger button is held down, so the sound
+# only begins once the button is released.
+_gate_armed = False
+_deferred = None   # filename waiting for the gate to open, or None
+
+
+def arm_gate():
+    """Begin deferring the next play() until release_gate() is called."""
+    global _gate_armed, _deferred
+    _gate_armed = True
+    _deferred = None
+
+
+def release_gate(su):
+    """Open the gate and start any sound that play() deferred."""
+    global _gate_armed, _deferred
+    if not _gate_armed:
+        return
+    _gate_armed = False
+    if _deferred is not None:
+        filename = _deferred
+        _deferred = None
+        _play_now(su, filename)
+
+
+def disarm_gate():
+    """Stop deferring and discard any held sound without playing it."""
+    global _gate_armed, _deferred
+    _gate_armed = False
+    _deferred = None
+
+
 def play(su, filename):
     """
     Play a WAV file through the Stellar Unicorn speaker.
     Non-blocking - audio plays in background.
 
+    If the audio gate is armed (a trigger button is being held), the sound is
+    deferred until release_gate() is called instead of starting immediately.
+
     Note: Stellar Unicorn expects 16-bit signed PCM at specific sample rate.
     WAV files should be pre-converted to match hardware expectations.
     """
+    global _deferred
+    if _gate_armed:
+        _deferred = filename   # hold until the button is released
+        return
+    _play_now(su, filename)
+
+
+def _play_now(su, filename):
+    """Load and start a WAV file immediately, bypassing the gate."""
     audio_data, sample_rate = load_wav(filename)
     su.play_sample(audio_data)
 
 
 def stop(su):
-    """Stop any currently playing audio."""
+    """Stop any currently playing audio and drop any deferred sound."""
+    global _deferred
+    _deferred = None
     su.stop_playing()
 
 

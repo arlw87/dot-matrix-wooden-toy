@@ -55,8 +55,7 @@ def setup():
         devices = kx_i2c.scan()
         print(f"[SETUP] I2C scan found devices: {[hex(d) for d in devices]}")
         kx = KX134(kx_i2c)
-        kx.configure_double_tap()  # max sensitivity: threshold=0x01, window=0xFF
-        print("[SETUP] KX134 OK — double-tap at max sensitivity")
+        print("[SETUP] KX134 OK — X/Y/Z measurement enabled")
     except Exception as e:
         print(f"[SETUP] KX134 FAILED: {e} — accelerometer disabled")
 
@@ -94,6 +93,10 @@ def create_interrupt_checker(su):
     def check_interrupt():
         # Also handle brightness buttons
         check_brightness_buttons(su)
+        # Hold-to-delay audio: once the trigger button is released, let the
+        # animation's deferred sound start.
+        if not buttons.any_pressed():
+            sound.release_gate(su)
         return buttons.get_pressed()
 
     return check_interrupt
@@ -143,11 +146,19 @@ def main():
                 # Stop any playing sound
                 sound.stop(su)
 
+                # Defer this animation's audio until the trigger button is
+                # released. The interrupt checker opens the gate on button-up;
+                # if the button is only tapped, the gate opens on the next frame.
+                sound.arm_gate()
+
                 # Create interrupt checker
                 check_interrupt = create_interrupt_checker(su)
 
                 # Play the animation - returns None if completed, or button name if interrupted
                 interrupted_by = animation.play(su, graphics, check_interrupt)
+
+                # Animation over — don't leak deferred audio into the next one
+                sound.disarm_gate()
 
                 if interrupted_by:
                     print(f"Animation {pressed} interrupted by {interrupted_by}")
@@ -167,15 +178,12 @@ def main():
             print("[MAIN] loop alive")
             _last_heartbeat = now
 
-        # KX134 console output for testing
+        # KX134 accelerometer — periodic X/Y/Z readout
         if kx:
             if time.ticks_diff(now, _last_kx_print) >= 500:
-                x, y = kx.read_xy()
-                print(f"[KX134] X={x:+.3f}g  Y={y:+.3f}g")
-                kx.dump_interrupt_regs()
+                x, y, z = kx.read_xyz()
+                print(f"[KX134] X={x:+.3f}g  Y={y:+.3f}g  Z={z:+.3f}g")
                 _last_kx_print = now
-            if kx.poll_double_tap():
-                print("[KX134] DOUBLE TAP")
 
         # Small delay to prevent busy-waiting
         time.sleep_ms(10)
