@@ -132,37 +132,47 @@ class TiltBallTest(unittest.TestCase):
         self.assertLess(ball.vx, 1.0)
         self.assertGreater(ball.vx, 0.0)   # still moving, just slower
 
-    # ── Cycle 6: colour by direction of travel ───────────────────────────────
+    # ── Cycle 6: colour follows the tilt (roll) direction ────────────────────
 
-    def test_colour_follows_dominant_direction(self):
-        """Colour snaps to the dominant velocity axis (veneer-safe palette)."""
+    def test_colour_follows_tilt_direction(self):
+        """Colour snaps to the dominant tilt axis (veneer-safe palette)."""
         ball = tilt.TiltBall()
-        ball.vx, ball.vy = 1.0, 0.1
-        self.assertEqual(ball.colour(), tilt.RED)      # moving +x
-        ball.vx, ball.vy = -1.0, 0.1
-        self.assertEqual(ball.colour(), tilt.AQUA)     # moving -x
-        ball.vx, ball.vy = 0.1, 1.0
-        self.assertEqual(ball.colour(), tilt.YELLOW)   # moving +y
-        ball.vx, ball.vy = 0.1, -1.0
-        self.assertEqual(ball.colour(), tilt.GREEN)    # moving -y
+        ball.step(1.0, 0.1)
+        self.assertEqual(ball.colour(), tilt.RED)      # tilt up
+        ball.step(-1.0, 0.1)
+        self.assertEqual(ball.colour(), tilt.AQUA)     # tilt down
+        ball.step(0.1, 1.0)
+        self.assertEqual(ball.colour(), tilt.YELLOW)   # tilt right
+        ball.step(0.1, -1.0)
+        self.assertEqual(ball.colour(), tilt.GREEN)    # tilt left
 
-    def test_colour_frozen_when_ball_comes_to_rest(self):
-        """When the ball stops, it keeps the colour it had while moving, not red."""
+    def test_colour_held_when_toy_is_level(self):
+        """With no tilt (level toy), the colour holds — it does not reset."""
         ball = tilt.TiltBall()
-        ball.vx, ball.vy = 0.0, -1.0        # rolling left → green
+        ball.step(0.0, -1.0)                # tilt left → green
         self.assertEqual(ball.colour(), tilt.GREEN)
-        ball.vx, ball.vy = 0.0, 0.0         # comes to rest against the wall
+        ball.step(0.0, 0.0)                 # level: no tilt
         self.assertEqual(ball.colour(), tilt.GREEN)   # stays green, not default red
 
-    def test_colour_ignores_bounce_back(self):
-        """On a wall bounce the colour stays the approach colour, not the rebound."""
-        ball = tilt.TiltBall(x=tilt.CENTRE, y=tilt.MIN_POS + 0.5)
-        ball.vy = -1.0                       # rolling left toward the wall → green
+    def test_colour_ignores_wall_rebound(self):
+        """Rolling into a wall and settling keeps the tilt colour, not the rebound.
+
+        Reproduces the reported bug: tilt left → green, but after the ball
+        bounced off the wall and settled it used to flip to yellow.
+        """
+        ball = tilt.TiltBall(x=tilt.CENTRE, y=tilt.MIN_POS + 3)
+        ball.step(0.0, -0.9)               # tilt left → green, rolling at the wall
         self.assertEqual(ball.colour(), tilt.GREEN)
-        bounced = ball.step(0.0, 0.0)        # hits wall, rebounds to the right
-        self.assertTrue(bounced)
-        self.assertGreater(ball.vy, 0.0)     # physically moving right now (rebound)
-        self.assertEqual(ball.colour(), tilt.GREEN)   # colour ignores the rebound
+        for _ in range(40):                # level off; ball bounces and settles
+            ball.step(0.0, 0.0)
+        self.assertEqual(ball.colour(), tilt.GREEN)   # still green after the rebound
+
+    def test_colour_stays_while_held_into_wall(self):
+        """Holding the tilt into a wall (ball micro-bouncing) keeps the colour."""
+        ball = tilt.TiltBall(x=tilt.CENTRE, y=tilt.MIN_POS + 3)
+        for _ in range(60):                # keep tilting left the whole time
+            ball.step(0.0, -0.9)
+        self.assertEqual(ball.colour(), tilt.GREEN)
 
     def test_colours_are_veneer_safe(self):
         """No banned colours: never purple (r>0,b>0,g==0) or faint plain blue."""

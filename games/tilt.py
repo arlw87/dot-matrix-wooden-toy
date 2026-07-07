@@ -85,8 +85,7 @@ class TiltBall:
         self.y = y
         self.vx = 0.0
         self.vy = 0.0
-        self._colour = RED         # remembered while moving; kept when at rest
-        self._colour_locked = False  # locked to approach colour after a bounce
+        self._colour = RED         # follows the tilt direction; held when level
 
     def step(self, ax, ay):
         """
@@ -95,6 +94,12 @@ class TiltBall:
         Gravity accelerates the ball, velocity moves it. Returns True if the
         ball bounced off a wall this frame.
         """
+        # Colour follows the tilt (roll) direction and holds when the toy is
+        # level. Using the tilt input — not velocity — means wall rebounds,
+        # which reverse velocity but not the tilt, never recolour the ball.
+        if ax != 0.0 or ay != 0.0:
+            self._colour = _direction_colour(ax, ay)
+
         self.vx = (self.vx + ax * ACCEL_SCALE) * FRICTION
         self.vy = (self.vy + ay * ACCEL_SCALE) * FRICTION
         self.x += self.vx
@@ -103,7 +108,6 @@ class TiltBall:
         # Clamp to the walls and reverse (with energy loss). A collision only
         # counts as a bounce — and plays a sound — if the impact was fast
         # enough; a ball merely resting against a wall does not re-trigger.
-        approach_vx, approach_vy = self.vx, self.vy   # direction into the wall
         bounced = False
         if self.x < MIN_POS or self.x > MAX_POS:
             self.x = MIN_POS if self.x < MIN_POS else MAX_POS
@@ -116,28 +120,15 @@ class TiltBall:
                 bounced = True
             self.vy = -self.vy * BOUNCE_DAMP
 
-        if bounced:
-            # Freeze the colour to the approach direction so the rebound (and
-            # any wall-to-wall bouncing that follows) doesn't recolour the ball.
-            self._colour = _direction_colour(approach_vx, approach_vy)
-            self._colour_locked = True
-        elif not self.is_moving():
-            # Come to rest: release the lock so the next real roll recolours it.
-            self._colour_locked = False
-
         return bounced
 
     def colour(self):
         """
-        Return the ball's colour from its dominant direction of travel.
+        Return the ball's colour: the direction the toy is being tilted.
 
-        While rolling freely the colour tracks the current direction. It stops
-        updating when the ball comes to rest (keeping its last colour) or after
-        a wall bounce (keeping the approach colour, ignoring the rebound) — the
-        lock is released once the ball settles so the next roll recolours it.
+        Set from the tilt input in step() and held steady when the toy is level,
+        so wall rebounds (which reverse velocity, not tilt) never recolour it.
         """
-        if self.is_moving() and not self._colour_locked:
-            self._colour = _direction_colour(self.vx, self.vy)
         return self._colour
 
     def is_moving(self):

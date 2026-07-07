@@ -36,17 +36,24 @@ BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boat', 'black']
 
 DEBOUNCE_MS = 50
 
-# Mode-toggle: hold the yellow (star) + red (heart) buttons together for this
-# long to toggle between Animation Mode and the Tilt Game.
-TOGGLE_BUTTONS = ('star', 'heart')   # yellow + red
+# Mode-toggle: hold a two-button combo together for this long to toggle a game
+# mode on/off. Each game has its own combo; the same combo enters and exits.
+#   yellow (star) + red (heart)   → Tilt Game        (check_mode_toggle)
+#   blue (boat) + pink (butterfly) → Rocket Blast-off (check_rocket_toggle)
+# The games are mutually exclusive: you exit one before entering the other.
+TILT_TOGGLE_BUTTONS   = ('star', 'heart')      # yellow + red
+ROCKET_TOGGLE_BUTTONS = ('boat', 'butterfly')  # blue + pink
 TOGGLE_HOLD_MS = 5000
+
+# Kept for backwards compatibility (older code/tests referenced this name).
+TOGGLE_BUTTONS = TILT_TOGGLE_BUTTONS
 
 _i2c = None
 _last_press_time = {name: 0 for name in BUTTON_BITS}
 
-# Mode-toggle hold state
-_toggle_hold_start = None   # ticks_ms when the combo hold began, or None
-_toggle_fired = False       # True once this hold has fired, until released
+# Per-combo hold state, keyed by the button tuple. Each entry tracks when the
+# hold began and whether it has already fired (so it fires once per hold).
+_toggle_state = {}   # combo -> {'start': ticks_ms or None, 'fired': bool}
 
 
 def init(su=None):
