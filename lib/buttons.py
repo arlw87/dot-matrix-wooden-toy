@@ -45,9 +45,6 @@ TILT_TOGGLE_BUTTONS   = ('star', 'heart')      # yellow + red
 ROCKET_TOGGLE_BUTTONS = ('boat', 'butterfly')  # blue + pink
 TOGGLE_HOLD_MS = 5000
 
-# Kept for backwards compatibility (older code/tests referenced this name).
-TOGGLE_BUTTONS = TILT_TOGGLE_BUTTONS
-
 _i2c = None
 _last_press_time = {name: 0 for name in BUTTON_BITS}
 
@@ -109,38 +106,63 @@ def any_pressed():
 
 
 def reset_mode_toggle():
-    """Clear any in-progress mode-toggle hold (e.g. on a mode change or wake)."""
-    global _toggle_hold_start, _toggle_fired
-    _toggle_hold_start = None
-    _toggle_fired = False
+    """Clear every in-progress mode-toggle hold (e.g. on a mode change or wake)."""
+    for state in _toggle_state.values():
+        state['start'] = None
+        state['fired'] = False
+
+
+def _check_combo_hold(combo):
+    """
+    Detect a sustained hold of a two-button combo.
+
+    Returns True exactly once when both buttons in ``combo`` have been held
+    together for TOGGLE_HOLD_MS, then stays False until they are released and
+    re-held. Each combo tracks its own hold state independently.
+    """
+    state = _toggle_state.get(combo)
+    if state is None:
+        state = {'start': None, 'fired': False}
+        _toggle_state[combo] = state
+
+    now = time.ticks_ms()
+    both_held = all(is_pressed(name) for name in combo)
+
+    if not both_held:
+        state['start'] = None
+        state['fired'] = False
+        return False
+
+    if state['start'] is None:
+        state['start'] = now
+
+    if state['fired']:
+        return False
+
+    if time.ticks_diff(now, state['start']) >= TOGGLE_HOLD_MS:
+        state['fired'] = True
+        return True
+    return False
 
 
 def check_mode_toggle():
     """
     Detect a sustained hold of the yellow (star) + red (heart) buttons.
 
-    Poll this from the main loop. Returns True exactly once when both buttons
-    have been held together for TOGGLE_HOLD_MS. Returns False otherwise.
+    Poll this from the main loop. Returns True exactly once per completed hold
+    to toggle the Tilt Game on or off.
     """
-    global _toggle_hold_start, _toggle_fired
-    now = time.ticks_ms()
-    both_held = all(is_pressed(name) for name in TOGGLE_BUTTONS)
+    return _check_combo_hold(TILT_TOGGLE_BUTTONS)
 
-    if not both_held:
-        _toggle_hold_start = None
-        _toggle_fired = False
-        return False
 
-    if _toggle_hold_start is None:
-        _toggle_hold_start = now
+def check_rocket_toggle():
+    """
+    Detect a sustained hold of the blue (boat) + pink (butterfly) buttons.
 
-    if _toggle_fired:
-        return False
-
-    if time.ticks_diff(now, _toggle_hold_start) >= TOGGLE_HOLD_MS:
-        _toggle_fired = True
-        return True
-    return False
+    Poll this from the main loop. Returns True exactly once per completed hold
+    to toggle the Rocket Blast-off game on or off.
+    """
+    return _check_combo_hold(ROCKET_TOGGLE_BUTTONS)
 
 
 def wait_for_release():

@@ -140,5 +140,49 @@ class ModeToggleTest(unittest.TestCase):
             self.assertTrue(buttons.check_mode_toggle())   # 2nd fire (exit game)
 
 
+class RocketToggleTest(unittest.TestCase):
+    """The Rocket Blast-off game uses the blue (boat) + pink (butterfly) combo."""
+
+    def setUp(self):
+        _clock.set(0)
+        buttons.reset_mode_toggle()
+
+    def _hold(self, *names):
+        return patch.object(buttons, "_read_portb", return_value=_portb_with(*names))
+
+    def test_blue_pink_held_five_seconds_fires_once(self):
+        """Holding boat + butterfly for 5s makes check_rocket_toggle() return True."""
+        with self._hold("boat", "butterfly"):
+            self.assertFalse(buttons.check_rocket_toggle())  # t=0, start hold
+            _clock.advance(5000)
+            self.assertTrue(buttons.check_rocket_toggle())   # t=5s, fires
+
+    def test_single_button_never_fires(self):
+        """Holding only the boat button never toggles the rocket game."""
+        with self._hold("boat"):
+            self.assertFalse(buttons.check_rocket_toggle())
+            _clock.advance(10000)
+            self.assertFalse(buttons.check_rocket_toggle())
+
+    def test_rocket_and_tilt_combos_are_independent(self):
+        """The star+heart combo does not fire the rocket toggle, and vice versa."""
+        # Holding the tilt combo for 5s fires tilt, never rocket.
+        with self._hold("star", "heart"):
+            buttons.check_mode_toggle()
+            buttons.check_rocket_toggle()
+            _clock.advance(5000)
+            self.assertTrue(buttons.check_mode_toggle())
+            self.assertFalse(buttons.check_rocket_toggle())
+        buttons.reset_mode_toggle()
+        _clock.set(0)
+        # Holding the rocket combo for 5s fires rocket, never tilt.
+        with self._hold("boat", "butterfly"):
+            buttons.check_mode_toggle()
+            buttons.check_rocket_toggle()
+            _clock.advance(5000)
+            self.assertTrue(buttons.check_rocket_toggle())
+            self.assertFalse(buttons.check_mode_toggle())
+
+
 if __name__ == "__main__":
     unittest.main()

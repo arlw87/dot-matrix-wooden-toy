@@ -23,7 +23,7 @@ from picographics import PicoGraphics, DISPLAY_STELLAR_UNICORN
 from lib import display, buttons, sleep
 from lib.kx134 import KX134
 from animations import get_animation, play_boot
-from games import tilt
+from games import tilt, rocket_blast
 
 # Configuration
 DEFAULT_BRIGHTNESS = 1  # 75% brightness
@@ -136,6 +136,40 @@ def play_tilt_game(su, graphics, kx):
     sleep.reset_timer()
 
 
+def play_rocket_game(su, graphics, kx):
+    """
+    Run the Rocket Blast-off game as a blocking loop until the player exits
+    (holds blue+pink for 5s again) or the toy is left still and sleeps.
+
+    While in the game the Animation Buttons are ignored — rocket_blast.run()
+    only reads the KX134 (shake) and the exit gesture. The Tilt Game and Rocket
+    Game are mutually exclusive: you exit one before the other can be entered.
+    """
+    print("[MODE] Blue + Pink held 5s → entering Rocket Blast-off")
+    sound.stop(su)
+    display.clear(graphics, su)
+
+    if kx is None:
+        print("[ROCKET] No KX134 — cannot run Rocket Blast-off; returning to Animation Mode")
+        return
+
+    # Exit when the blue+pink combo is held for 5s again. check_rocket_toggle()
+    # won't re-fire until the entry hold is released first (its fired-latch).
+    outcome = rocket_blast.run(su, graphics, kx, should_exit=buttons.check_rocket_toggle)
+
+    display.clear(graphics, su)
+    buttons.reset_mode_toggle()
+
+    if outcome == rocket_blast.SLEEP:
+        print("[MODE] Rocket Blast-off left still → entering sleep")
+        sleep.enter_sleep(su, graphics)
+        print("[MODE] Woke from sleep → Animation Mode")
+    else:
+        print("[MODE] Exited Rocket Blast-off → Animation Mode")
+
+    sleep.reset_timer()
+
+
 def main():
     """Main program loop."""
     print("=== TOY STARTING ===")
@@ -171,15 +205,26 @@ def main():
             next_button = None
             continue
 
+        # Mode toggle: hold the blue (boat) + pink (butterfly) buttons together
+        # for 5 seconds to enter the Rocket Blast-off game (same combo exits).
+        if buttons.check_rocket_toggle():
+            play_rocket_game(su, graphics, kx)
+            next_button = None
+            continue
+
         now = time.ticks_ms()
 
         # ── Animation Mode ────────────────────────────────────────────────────
         # Handle brightness buttons
         check_brightness_buttons(su)
 
-        # While the yellow+red toggle combo is being held, don't fire an
-        # animation — let the hold accumulate toward the mode toggle instead.
+        # While either toggle combo is being held, don't fire an animation — let
+        # the hold accumulate toward the mode toggle instead (yellow+red → Tilt
+        # Game, blue+pink → Rocket Blast-off).
         if buttons.is_pressed('star') and buttons.is_pressed('heart'):
+            time.sleep_ms(10)
+            continue
+        if buttons.is_pressed('boat') and buttons.is_pressed('butterfly'):
             time.sleep_ms(10)
             continue
 
