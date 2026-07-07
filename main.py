@@ -15,11 +15,13 @@ gc.collect()  # Clean memory before any allocations
 from lib import sound
 
 import time
+from machine import I2C, Pin
 from stellar import StellarUnicorn
 from picographics import PicoGraphics, DISPLAY_STELLAR_UNICORN
 
 # Import remaining modules
 from lib import display, buttons, sleep
+from lib.kx134 import KX134
 from animations import get_animation, play_boot
 
 # Configuration
@@ -45,7 +47,13 @@ def setup():
     # Initialize sleep timer
     sleep.init()
 
-    return su, graphics
+    # Initialize KX134 accelerometer (shares I2C0 with MCP23017)
+    kx_i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400_000)
+    kx = KX134(kx_i2c)
+    kx.configure_double_tap()
+    print("KX134 ready")
+
+    return su, graphics, kx
 
 
 def check_brightness_buttons(su):
@@ -87,7 +95,7 @@ def create_interrupt_checker(su):
 def main():
     """Main program loop."""
     # Setup hardware
-    su, graphics = setup()
+    su, graphics, kx = setup()
 
     # Play boot animation
     print("Playing boot animation...")
@@ -99,6 +107,7 @@ def main():
 
     # Track next button to play (for immediate interrupt handling)
     next_button = None
+    _last_kx_print = time.ticks_ms()
 
     while True:
         # Check for auto-sleep
@@ -145,6 +154,15 @@ def main():
 
                 # Reset sleep timer after animation ends
                 sleep.reset_timer()
+
+        # KX134 console output for testing
+        now = time.ticks_ms()
+        if time.ticks_diff(now, _last_kx_print) >= 500:
+            x, y = kx.read_xy()
+            print(f"[KX134] X={x:+.3f}g  Y={y:+.3f}g")
+            _last_kx_print = now
+        if kx.poll_double_tap():
+            print("[KX134] DOUBLE TAP")
 
         # Small delay to prevent busy-waiting
         time.sleep_ms(10)
