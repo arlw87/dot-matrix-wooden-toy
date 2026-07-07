@@ -23,6 +23,7 @@ from picographics import PicoGraphics, DISPLAY_STELLAR_UNICORN
 from lib import display, buttons, sleep
 from lib.kx134 import KX134
 from animations import get_animation, play_boot
+from games import tilt
 
 # Configuration
 DEFAULT_BRIGHTNESS = 1  # 75% brightness
@@ -102,6 +103,39 @@ def create_interrupt_checker(su):
     return check_interrupt
 
 
+def play_tilt_game(su, graphics, kx):
+    """
+    Run the Tilt Game as a blocking loop until the player exits (holds
+    yellow+red for 5s again) or the ball settles and the toy sleeps.
+
+    While in the game the Animation Buttons are ignored — tilt.run() only reads
+    the KX134 and the exit gesture.
+    """
+    print("[MODE] Yellow + Red held 5s → entering Tilt Game")
+    sound.stop(su)
+    display.clear(graphics, su)
+
+    if kx is None:
+        print("[TILT] No KX134 — cannot run Tilt Game; returning to Animation Mode")
+        return
+
+    # Exit when the yellow+red combo is held for 5s again. check_mode_toggle()
+    # won't re-fire until the entry hold is released first (its fired-latch).
+    outcome = tilt.run(su, graphics, kx, should_exit=buttons.check_mode_toggle)
+
+    display.clear(graphics, su)
+    buttons.reset_mode_toggle()
+
+    if outcome == tilt.SLEEP:
+        print("[MODE] Tilt Game settled (held still) → entering sleep")
+        sleep.enter_sleep(su, graphics)
+        print("[MODE] Woke from sleep → Animation Mode")
+    else:
+        print("[MODE] Exited Tilt Game → Animation Mode")
+
+    sleep.reset_timer()
+
+
 def main():
     """Main program loop."""
     print("=== TOY STARTING ===")
@@ -126,10 +160,28 @@ def main():
             print("Woke from sleep")
             # After wake, just go back to idle (no boot animation per PRD)
             next_button = None
+            buttons.reset_mode_toggle()
             continue
 
+        # Mode toggle: hold the yellow (star) + red (heart) buttons together for
+        # 5 seconds to enter the Tilt Game. The game runs as a blocking loop;
+        # holding the same combo again (or the ball settling) exits it.
+        if buttons.check_mode_toggle():
+            play_tilt_game(su, graphics, kx)
+            next_button = None
+            continue
+
+        now = time.ticks_ms()
+
+        # ── Animation Mode ────────────────────────────────────────────────────
         # Handle brightness buttons
         check_brightness_buttons(su)
+
+        # While the yellow+red toggle combo is being held, don't fire an
+        # animation — let the hold accumulate toward the mode toggle instead.
+        if buttons.is_pressed('star') and buttons.is_pressed('heart'):
+            time.sleep_ms(10)
+            continue
 
         # Check for button press (use queued button or poll for new one)
         pressed = next_button or buttons.get_pressed()
@@ -173,7 +225,6 @@ def main():
                 sleep.reset_timer()
 
         # Heartbeat so you can tell the loop is alive
-        now = time.ticks_ms()
         if time.ticks_diff(now, _last_heartbeat) >= 5000:
             print("[MAIN] loop alive")
             _last_heartbeat = now

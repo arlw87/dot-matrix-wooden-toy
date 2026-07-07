@@ -36,8 +36,17 @@ BUTTON_ORDER = ['heart', 'star', 'rocket', 'butterfly', 'boat', 'black']
 
 DEBOUNCE_MS = 50
 
+# Mode-toggle: hold the yellow (star) + red (heart) buttons together for this
+# long to toggle between Animation Mode and the Tilt Game.
+TOGGLE_BUTTONS = ('star', 'heart')   # yellow + red
+TOGGLE_HOLD_MS = 5000
+
 _i2c = None
 _last_press_time = {name: 0 for name in BUTTON_BITS}
+
+# Mode-toggle hold state
+_toggle_hold_start = None   # ticks_ms when the combo hold began, or None
+_toggle_fired = False       # True once this hold has fired, until released
 
 
 def init(su=None):
@@ -90,6 +99,41 @@ def any_pressed():
     """Check if any button is currently pressed (no debounce)."""
     val = _read_portb()
     return any((val & (1 << bit)) == 0 for bit in BUTTON_BITS.values())
+
+
+def reset_mode_toggle():
+    """Clear any in-progress mode-toggle hold (e.g. on a mode change or wake)."""
+    global _toggle_hold_start, _toggle_fired
+    _toggle_hold_start = None
+    _toggle_fired = False
+
+
+def check_mode_toggle():
+    """
+    Detect a sustained hold of the yellow (star) + red (heart) buttons.
+
+    Poll this from the main loop. Returns True exactly once when both buttons
+    have been held together for TOGGLE_HOLD_MS. Returns False otherwise.
+    """
+    global _toggle_hold_start, _toggle_fired
+    now = time.ticks_ms()
+    both_held = all(is_pressed(name) for name in TOGGLE_BUTTONS)
+
+    if not both_held:
+        _toggle_hold_start = None
+        _toggle_fired = False
+        return False
+
+    if _toggle_hold_start is None:
+        _toggle_hold_start = now
+
+    if _toggle_fired:
+        return False
+
+    if time.ticks_diff(now, _toggle_hold_start) >= TOGGLE_HOLD_MS:
+        _toggle_fired = True
+        return True
+    return False
 
 
 def wait_for_release():
