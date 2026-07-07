@@ -33,25 +33,32 @@ VOLUME = 0.45             # Fixed moderate volume (~45%)
 
 def setup():
     """Initialize hardware and return instances."""
-    # Create Stellar Unicorn and graphics instances
+    print("[SETUP] Creating display...")
     su = StellarUnicorn()
     graphics = PicoGraphics(display=DISPLAY_STELLAR_UNICORN)
 
-    # Set default brightness and volume
+    print("[SETUP] Setting brightness and volume...")
     su.set_brightness(DEFAULT_BRIGHTNESS)
     sound.set_volume(su, VOLUME)
 
-    # Initialize buttons (pass su to enable onboard button testing)
+    print("[SETUP] Initialising buttons (MCP23017)...")
     buttons.init(su)
+    print("[SETUP] Buttons OK")
 
-    # Initialize sleep timer
+    print("[SETUP] Initialising sleep timer...")
     sleep.init()
 
-    # Initialize KX134 accelerometer (shares I2C0 with MCP23017)
-    kx_i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400_000)
-    kx = KX134(kx_i2c)
-    kx.configure_double_tap()
-    print("KX134 ready")
+    print("[SETUP] Initialising KX134 accelerometer...")
+    kx = None
+    try:
+        kx_i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400_000)
+        devices = kx_i2c.scan()
+        print(f"[SETUP] I2C scan found devices: {[hex(d) for d in devices]}")
+        kx = KX134(kx_i2c)
+        kx.configure_double_tap()  # max sensitivity: threshold=0x01, window=0xFF
+        print("[SETUP] KX134 OK — double-tap at max sensitivity")
+    except Exception as e:
+        print(f"[SETUP] KX134 FAILED: {e} — accelerometer disabled")
 
     return su, graphics, kx
 
@@ -94,20 +101,19 @@ def create_interrupt_checker(su):
 
 def main():
     """Main program loop."""
-    # Setup hardware
+    print("=== TOY STARTING ===")
     su, graphics, kx = setup()
+    print("[SETUP] All done")
 
-    # Play boot animation
-    print("Playing boot animation...")
+    print("[MAIN] Playing boot animation...")
     play_boot(su, graphics)
 
-    # Clear display and go to idle
     display.clear(graphics, su)
-    print("Ready - waiting for button press...")
+    print("[MAIN] Ready — waiting for button press")
 
-    # Track next button to play (for immediate interrupt handling)
     next_button = None
     _last_kx_print = time.ticks_ms()
+    _last_heartbeat = time.ticks_ms()
 
     while True:
         # Check for auto-sleep
@@ -127,7 +133,7 @@ def main():
         next_button = None  # Clear queued button
 
         if pressed:
-            print(f"Button pressed: {pressed}")
+            print(f"[BTN] {pressed} pressed")
             sleep.reset_timer()
 
             # Get the animation for this button
@@ -155,14 +161,21 @@ def main():
                 # Reset sleep timer after animation ends
                 sleep.reset_timer()
 
-        # KX134 console output for testing
+        # Heartbeat so you can tell the loop is alive
         now = time.ticks_ms()
-        if time.ticks_diff(now, _last_kx_print) >= 500:
-            x, y = kx.read_xy()
-            print(f"[KX134] X={x:+.3f}g  Y={y:+.3f}g")
-            _last_kx_print = now
-        if kx.poll_double_tap():
-            print("[KX134] DOUBLE TAP")
+        if time.ticks_diff(now, _last_heartbeat) >= 5000:
+            print("[MAIN] loop alive")
+            _last_heartbeat = now
+
+        # KX134 console output for testing
+        if kx:
+            if time.ticks_diff(now, _last_kx_print) >= 500:
+                x, y = kx.read_xy()
+                print(f"[KX134] X={x:+.3f}g  Y={y:+.3f}g")
+                kx.dump_interrupt_regs()
+                _last_kx_print = now
+            if kx.poll_double_tap():
+                print("[KX134] DOUBLE TAP")
 
         # Small delay to prevent busy-waiting
         time.sleep_ms(10)

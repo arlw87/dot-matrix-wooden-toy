@@ -127,15 +127,15 @@ class KX134DoubleTapTest(unittest.TestCase):
     # ── Cycle 6: double-tap interrupt fires ───────────────────────────────────
 
     def test_poll_double_tap_true_when_double_tap_bit_set(self):
-        """poll_double_tap() returns True when INS2 reports a double-tap (bits[3:2]=0b10)."""
-        kx, _ = self._make_kx(ins2_value=0x08)   # 0b00001000
+        """poll_double_tap() returns True when INS2 reports a double-tap (bits[1:0]=0b10)."""
+        kx, _ = self._make_kx(ins2_value=0x02)   # 0b00000010
         self.assertTrue(kx.poll_double_tap())
 
     # ── Cycle 7: latch clears ─────────────────────────────────────────────────
 
     def test_poll_double_tap_clears_latch(self):
         """After detecting a double-tap, poll_double_tap() writes INT_REL to clear the latch."""
-        kx, i2c = self._make_kx(ins2_value=0x08)
+        kx, i2c = self._make_kx(ins2_value=0x02)
         kx.poll_double_tap()
         write_calls = [c for c in i2c.writeto_mem.call_args_list
                        if c.args[1] == KX134._REG_INT_REL]
